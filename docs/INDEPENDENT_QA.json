@@ -1,0 +1,26 @@
+{
+  "kernel_commit": "314bd38b774516af198d039de5bc3e036c17b19d",
+  "browser_acceptance": {
+    "browser_join": true,
+    "pathfinding_dialogue": true,
+    "full_quest": true,
+    "persistent_note": true,
+    "reload_continuity": true,
+    "safe_public_expression": true,
+    "movement_cancel": true,
+    "reconnect": true,
+    "bilingual": true,
+    "mobile_layout": true,
+    "page_errors": [],
+    "state_source": "real HTTP server, kernel timers and persistent SQLite"
+  },
+  "additional_acceptance": {
+    "mobile_first_entry": true,
+    "lost_response_recovers_without_duplicate": true,
+    "real_server_restart_completes_accepted_motion": true,
+    "readonly_browser_has_no_control_buttons": true,
+    "revocation_clears_observer_view": true,
+    "page_errors": []
+  },
+  "evidence_scope": "Script-driven real Chromium browser, real local HTTP server and pinned kernel; no autonomous LLM claim."
+}
