@@ -178,9 +178,21 @@ export class VillageRenderer{
   for(const [i,p] of this.map.trees.entries())drawables.push({y:(p[1]+1)*T,draw:()=>this.tree(c,p[0],p[1],i*13)});
   drawables.push({y:8.5*T,draw:()=>this.tree(c,17.5,7,22,true)});
   for(const t of this.map.targets)drawables.push({y:(t.y+1)*T,draw:()=>this.targetObject(c,t,now)});
-  for(const a of Object.values(this.scene?.entities||{})){const p=this.actorPosition(a);drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});}
+  const actors=Object.values(this.scene?.entities||{}).filter(a=>a.kind==='traveler');
+  for(const a of actors){const p=this.actorPosition(a);const colocated=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));
+   const visualOffset=(colocated.findIndex(x=>x.role_id===a.role_id)-(colocated.length-1)/2)*.30;
+   drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,x:p.x+visualOffset,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
+  }
   for(const [x,y] of [[15,12],[23,12],[26,11],[31,12],[10,21],[20,21]])drawables.push({y:(y+1)*T,draw:()=>this.lamp(c,x,y,now)});
   drawables.sort((a,b)=>a.y-b.y);drawables.forEach(d=>d.draw());
+  // Nameplates identify real entered travelers; emphasis does not imply a model is online.
+  for(const a of actors){const p=this.actorPosition(a),x=p.x*T+8,y=(p.y+1)*T-43;
+   const label=[...a.name].slice(0,14).join('');c.save();c.font='7px monospace';c.textAlign='center';
+   const w=Math.ceil(c.measureText(label).width)+8;rect(c,x-w/2,y-7,w,10,'rgba(15,30,31,.86)');
+   c.fillStyle=a.role_id===this.focusRole?'#ffe2a0':'#e1e6ce';c.fillText(label,Math.round(x),Math.round(y));
+   if(a.role_id===this.focusRole){c.strokeStyle='#f1ce80';c.strokeRect(Math.round(x-9),Math.round(p.y*T-18),18,35);}
+   c.restore();
+  }
   // Warm hanging lights, high enough not to imply collision.
   const lights=[];
   for(let i=0;i<11;i++){const x=195+i*18,y=121+Math.sin(i/10*Math.PI)*14;lights.push([x,y]);if(i)line(c,lights[i-1],[x,y],'#65694d');rect(c,x-1,y,3,4,i%2?'#dbae69':'#e3c88a');}

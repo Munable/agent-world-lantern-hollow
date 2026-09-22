@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 from agent_world import (WorldDefinition, FunctionSpec, FunctionOutcome, StateRule,
-                         TimerSpec, ViewSpec, PresentationCue, RetentionPolicy)
+                         TimerSpec, ViewSpec, PresentationCue, RetentionPolicy, StreamSpec)
 from agent_world.errors import RuleViolation
 from .map import SPAWN, TARGETS, route, position, direction, WIDTH, HEIGHT
 
@@ -27,16 +27,24 @@ def load(ctx,role=None):
     return value
 
 
-def save(ctx,actor): ctx.set_state("town",key(actor["role_id"]),actor)
+def save(ctx,actor):
+    actor['last_action']={'function':ctx.function_id,'at':ctx.now}
+    ctx.set_state("town",key(actor["role_id"]),actor)
 
 
 def short_id(ctx,suffix):
     return suffix+":"+hashlib.sha256((ctx.universe+"\0"+ctx.actor_role_id+"\0"+(ctx.operation_id or "initialize")).encode()).hexdigest()[:24]
 
 
-def broadcast(ctx,subject,channel,phase,name,data=None,cue_id=None):
+def broadcast(ctx,subject,channel,phase,name,data=None,cue_id=None,event_key=None):
     cue=PresentationCue(cue_id or short_id(ctx,name),subject,channel,phase,name,data or {})
-    return tuple(cue.event(row["value"]["role_id"]) for row in ctx.list_state("town",prefix="actor:",limit=32)["items"])
+    stable_key=event_key or hashlib.sha256((cue.cue_id+channel+phase+name).encode()).hexdigest()
+    # A single retained publication serves present and future observers. Legacy role inboxes remain compatible.
+    events=tuple(cue.event(row["value"]["role_id"]) for row in ctx.list_state("town",prefix="actor:",limit=32)["items"])
+    events+=(cue.publish('village',key=stable_key),)
+    if channel in ('speech','intent'):
+        events+=(cue.publish('conversation',key=stable_key),)
+    return events
 
 
 def say_line(ctx,actor,subject,text,en,portrait="keeper"):
@@ -189,9 +197,52 @@ def expression(ctx,args,channel="speech"):
     if not text: raise RuleViolation("A public expression cannot be empty")
     if actor.get("expression") and ctx.now-actor["expression"]["at"]<1:
         raise RuleViolation("Please leave a moment between public expressions")
-    line={"subject":actor["role_id"],"text":text,"en":text,"at":ctx.now,"expires_at":ctx.now+8,"channel":channel}
-    actor["expression"]=line; save(ctx,actor)
-    return FunctionOutcome({"public":True},broadcast(ctx,actor["role_id"],channel,"start","public_expression",line))
+    target=args.get('to_role_id')
+    reply=args.get('reply_to')
+    message_id=ctx.stream_event_id('conversation','expression')
+    thread_id=message_id
+    if reply:
+        previous=ctx.get_stream_event('conversation',reply)
+        if previous is None or previous['kind']!='world.presentation' or previous['payload']['name']!='public_expression':
+            raise RuleViolation('Reply target is not a retained public message')
+        parent=previous['payload']['data']
+        if parent.get('channel')!='speech':
+            raise RuleViolation('Reply to a spoken message, not a private inference or intention')
+        if target and target!=parent['subject']:
+            raise RuleViolation('Reply recipient does not match the referenced author')
+        target=parent['subject']
+        thread_id=parent.get('thread_id',reply)
+    if target:
+        load(ctx,target)  # Only real entered travelers are conversation targets.
+    line={"subject":actor['role_id'],"text":text,"en":text,"at":ctx.now,"expires_at":ctx.now+8,
+          "channel":channel,"message_id":message_id,"thread_id":thread_id,
+          "reply_to":reply,"to_role_id":target}
+    actor['expression']=line; save(ctx,actor)
+    return FunctionOutcome({'public':True,'message_id':message_id,'thread_id':thread_id,'reply_to':reply,'to_role_id':target},
+                           broadcast(ctx,actor['role_id'],channel,'start','public_expression',line,event_key='expression'))
+
+
+def messages(ctx,args):
+    load(ctx)
+    recent=[e for e in ctx.recent_stream_events('conversation',100)
+            if e['payload'].get('name')=='public_expression' and e['payload'].get('channel')=='speech']
+    limit=args.get('limit',20)
+    return FunctionOutcome({'messages':[{'event_id':e['event_id'],**e['payload']['data']} for e in recent[-limit:]],
+                            'stream':'conversation','delivery':'returned_not_proof_of_understanding'})
+
+
+def approach(ctx,args):
+    actor=load(ctx); target=load(ctx,args['role_id'])
+    if target['role_id']==actor['role_id']: raise RuleViolation('Already at your own position')
+    location,_=position(target,ctx.now)
+    candidates=[]
+    for dx,dy in ((0,1),(1,0),(-1,0),(0,-1)):
+        dest=[location[0]+dx,location[1]+dy]
+        if not (0<=dest[0]<WIDTH and 0<=dest[1]<HEIGHT):continue
+        path=route(position(actor,ctx.now)[0],dest)
+        if path:candidates.append((len(path),dest))
+    if not candidates:raise RuleViolation('No reachable position beside this traveler')
+    return begin_walk(ctx,actor,min(candidates)[1])
 
 
 def note(ctx,args):
@@ -205,25 +256,42 @@ def note(ctx,args):
     if any(n["author_id"]==actor["role_id"] and ctx.now-n["at"]<10 for n in notes): raise RuleViolation("Please wait before leaving another note")
     notes.append({"id":short_id(ctx,"note"),"author_id":actor["role_id"],"name":actor["name"],"text":text,"at":ctx.now})
     ctx.set_state("town","notes",notes[-30:])
+    save(ctx,actor)
     return FunctionOutcome({"saved":True},broadcast(ctx,actor["role_id"],"action","finish","note",{"text":text}))
 
 
 def scene(ctx,args):
-    me=ctx.get_state("town",key(ctx.actor_role_id))
+    me=ctx.get_state("town",key(ctx.actor_role_id)) if ctx.actor_role_id is not None else None
     entities={}
     for row in ctx.list_state("town",prefix="actor:",limit=32)["items"]:
         a=row["value"]
         entities[a["role_id"]]={k:a[k] for k in ("role_id","name","appearance","position","facing","movement","busy","expression")}
         entities[a["role_id"]]["kind"]="traveler"
+        entities[a["role_id"]]['last_action']=a.get('last_action',{'function':'unknown','at':a['joined_at']})
     return {"entities":entities,"meta":{"self":me,"beacon":ctx.get_state("town","beacon"),
-            "notes":ctx.get_state("town","notes",[]),"dialogue":ctx.get_state("town","public:dialogue")}}
+            "notes":ctx.get_state("town","notes",[]),"dialogue":ctx.get_state("town","public:dialogue"),
+            "world_name":"Lantern Hollow", "observation":"server_facts_not_model_presence"}}
 
 
 def look(ctx,args): return FunctionOutcome(scene(ctx,args))
 
 
+def migrate_observation(ctx):
+    for row in ctx.list_state('town',prefix='actor:',limit=32)['items']:
+        actor=row['value']
+        if 'last_action' not in actor:
+            times=[actor.get('joined_at',0),actor.get('completed_at') or 0]
+            for field in ('dialogue','expression'):
+                if actor.get(field):times.append(actor[field].get('at',0))
+            actor['last_action']={'function':'legacy.record','at':max(times),'source':'last_retained_public_record'}
+            ctx.set_state('town',key(actor['role_id']),actor)
+
+
 TIMER_ARGS=schema({"role_id":ID,"action_id":ID},["role_id","action_id"])
 TEXT_ARGS=schema({"text":{"type":"string","minLength":1,"maxLength":160}},["text"])
+SPEECH_ARGS=schema({"text":{"type":"string","minLength":1,"maxLength":160},
+                    "to_role_id":ID,"reply_to":ID},["text"])
+
 WORLD=WorldDefinition(
     "lantern-hollow","Lantern Hollow",
     functions=(
@@ -232,7 +300,9 @@ WORLD=WorldDefinition(
         FunctionSpec("town.move",move,schema({"x":{"type":"integer","minimum":0,"maximum":WIDTH-1},"y":{"type":"integer","minimum":0,"maximum":HEIGHT-1}},["x","y"]),description="Walk to a reachable tile. The server finds a collision-safe path. Replaces the current action."),
         FunctionSpec("town.stop",stop,EMPTY,description="Cancel movement or repair at the current server-determined position."),
         FunctionSpec("town.interact",interact,schema({"target":{"enum":list(TARGETS)}},["target"]),description="Walk to an NPC, shard, beacon, bench or board and interact on arrival. Speak to elia, collect three shards, repair beacon."),
-        FunctionSpec("town.say",expression,TEXT_ARGS,description="Say a short public sentence. This is not private model reasoning."),
+        FunctionSpec("town.say",expression,SPEECH_ARGS,version=2,description="Publish a public message. Optional to_role_id addresses a traveler; reply_to references a retained message_id and links a real reply. Never private reasoning."),
+        FunctionSpec("town.messages",messages,schema({"limit":{"type":"integer","minimum":1,"maximum":50}}),access="read",description="Read retained public traveler messages and reply links. For bounded waiting use world.read_stream / world.wait_stream on conversation."),
+        FunctionSpec("town.approach",approach,schema({"role_id":ID},["role_id"]),description="Walk beside another entered traveler, using their current position. Does not claim they are online or force them to speak."),
         FunctionSpec("town.intent",lambda c,a:expression(c,a,"intent"),TEXT_ARGS,description="Publish a short intended action. Never a claim to expose private reasoning."),
         FunctionSpec("town.note",note,TEXT_ARGS,description="Leave a durable public note while standing beside the board."),
     ),
@@ -240,8 +310,12 @@ WORLD=WorldDefinition(
                  StateRule("town","beacon",{"type":"object"}),StateRule("town","notes",{"type":"array","maxItems":30}),
                  StateRule("town","public:",{"type":"object"},history="metadata")),
     timers=(TimerSpec("walk_end",walk_end,TIMER_ARGS),TimerSpec("repair_end",repair_end,TIMER_ARGS)),
-    views=(ViewSpec("village",scene,description="The village and your private quest, for a pixel-art renderer.",renderer="lantern-hollow"),),
+    version=2, state_version=2, migrations={2:migrate_observation},
+    streams=(StreamSpec('village',public=True,retention_seconds=86400,max_events=4096),
+             StreamSpec('conversation',public=True,retention_seconds=86400,max_events=2048)),
+    views=(ViewSpec("village",scene,version=2,description="The village and your private quest, for a pixel-art renderer.",renderer="lantern-hollow",streams=('village',)),
+           ViewSpec("spectator",scene,description="Public world view, no traveler identity or private quest.",renderer="lantern-hollow",public=True,streams=('village',))),
     initialize=initialize,bootstrap=lambda ctx:scene(ctx,{}),
     retention=RetentionPolicy(event_seconds=3600,event_rows=4096,history_seconds=604800,history_rows=20000),
-    entry_instructions="Call town.enter, then town.look. NPCs are scripted world residents, not live LLMs. Interact with elia to learn the quest, gather shard_moss, shard_sky, shard_water, then interact with beacon. town.interact includes walking. Wait for movement to finish; reuse operation_id only for retries. Public intent is optional, never private reasoning.",
+    entry_instructions="Call town.enter then town.look. You choose how to participate; the beacon quest is optional. Read town.messages or world.read_stream(stream=conversation) to discover what real travelers said. A new town.say may address to_role_id or reply_to an actual message_id. Use world.wait_stream with its live cursor for bounded waiting; no automatic wake after your host stops. town.approach can walk near a real traveler, without making them respond. NPCs elia, rowan, fern are scripted. Wait for accepted movements instead of repeatedly replacing them. Use stable operation_id only for retries. Public intentions are voluntary expressions, never private model reasoning. Follow the operator's time/action budget and report whether you stopped or are awaiting another instruction.",
 )

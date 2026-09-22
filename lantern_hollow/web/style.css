@@ -4,3 +4,21 @@
 .appearance-picker{display:flex;gap:10px;margin:0 0 3px}.appearance-picker button{width:42px;height:42px;border:1px solid #607763;padding:2px;background:#203537}.appearance-picker button[aria-pressed=true]{border-color:#ecd198;background:#53573c;box-shadow:0 0 0 2px #baa77e22}.appearance-picker canvas{width:34px;height:34px;image-rendering:pixelated}.bubble{transform:none;overflow-wrap:anywhere}.bubble::after{left:var(--tail,50%)}
 @media(max-width:850px){.canvas-wrap{min-height:0}}
 @media(max-width:540px){.canvas-wrap:has(#welcome:not([hidden])){min-height:430px}.welcome{max-width:none}.appearance-picker button{width:38px;height:38px}.appearance-picker canvas{width:30px;height:30px}}
+
+/* Observation is independent of a player session. */
+.live-panel{margin-bottom:20px}.live-panel h2{font-size:24px}.live-panel .small{font-size:11px;line-height:1.65;color:#aab9ad}
+#traveler-count{border:1px solid #617769;padding:2px 9px;font-size:12px;color:#e2c989}
+.travelers{display:grid;gap:7px;margin:12px 0 22px}.traveler-row{text-align:left;padding:10px;border:1px solid #455b52;background:#1c302f;color:#dddbbe;display:grid;grid-template-columns:1fr auto;gap:3px}
+.traveler-row strong{font:600 12px system-ui}.traveler-row small{grid-column:1/-1;font-size:10px;color:#a9beb5}.traveler-row.focused{border-color:#dfbb7d;background:#2b4038}.traveler-row .state{font-size:10px;color:#dbc699}
+#watch-health.stale{color:#e7a697}#event-filter{background:#1a2c2b;color:#d8d9bf;border:1px solid #56665b;padding:3px;max-width:86px;font:12px system-ui}
+.timeline{padding:0;list-style:none;margin:8px 0;max-height:350px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;border-top:1px solid #46594f}
+.timeline li{padding:10px 0;border-bottom:1px solid #354e47;overflow-wrap:anywhere;font:12px/1.65 system-ui}.timeline .event-top{display:flex;justify-content:space-between;gap:5px;color:#c0bd99;font-size:10px}.timeline .event-text{white-space:pre-wrap;margin-top:3px;color:#e3e3cd}.timeline .event-detail{font-size:10px;color:#9fbbb1}.timeline .reply{font-size:11px;padding:3px 7px;margin-top:4px;color:#e5ca93;border:1px solid #566d5c;background:transparent}
+.timeline li.fresh{border-left:2px solid #ddbf7e;padding-left:8px}.timeline li.history .event-top{color:#9ba89c}
+body.spectating .player-journal{display:none}body.spectating .traveler-chip #portrait{opacity:.5}body.spectating #say,body.spectating #intent,body.spectating #stop{opacity:.3}
+body.spectating .journal{max-height:calc(100vh - 165px);overflow:auto}.bubble .to{font-size:10px;opacity:.8}
+#join-mode,#watch-mode{margin-right:6px}.live-panel .empty{font-size:12px;color:#c0c8b5;padding:12px 0}
+@media(max-width:850px){body.spectating .journal{max-height:none}.timeline{max-height:330px}.live-panel{margin-top:8px}.world-top .location small{display:none}}
+
+@media(min-width:851px){.journal{max-height:calc(100vh - 165px);overflow:auto;scrollbar-width:thin}}
+@media(max-width:850px){body.spectating .journal{display:block!important;max-height:none}.masthead nav #join-mode{font-size:10px;letter-spacing:0;line-height:1.4;min-width:70px;max-width:90px;padding:8px 5px}}
+#modal select{width:100%;padding:9px;background:#1a2d2c;color:#e3d8b6;border:1px solid #617160;margin:8px 0}

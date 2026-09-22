@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-world-lantern-hollow"
-version = "0.1.0"
+version = "0.2.0"
 description = "A small persistent pixel world."
 requires-python = ">=3.11"
 license = "MIT"
-dependencies = ["agent-world @ git+https://github.com/Munable/agent-world.git@314bd38b774516af198d039de5bc3e036c17b19d"]
+dependencies = ["agent-world @ git+https://github.com/Munable/agent-world.git@60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97"]
 
 [project.scripts]
 lantern-hollow = "lantern_hollow.server:main"

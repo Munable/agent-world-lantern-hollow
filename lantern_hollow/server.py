@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import json
 import os
 import uuid
+import time
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -24,12 +25,14 @@ from agent_world.maintenance import retention_lifespan
 from agent_world.world_sdk import install_world
 from agent_world.errors import AuthenticationRequired, InvalidArguments, IdentityScopeMismatch, CursorExpired, PermissionDenied
 from agent_world.world_views import ViewResetRequired
+from agent_world.world_streams import StreamResetRequired
+from agent_world.diagnostics import SafeRequestTrace
 from .world import WORLD
 from .map import manifest
 
 COOKIE="lantern_identity"
 WEB=Path(__file__).parent/"web"
-CORE_PIN="314bd38b774516af198d039de5bc3e036c17b19d"
+CORE_PIN="60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97"
 
 
 def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow"):
@@ -67,7 +70,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             if request.headers.get("origin") not in (None,public_url) or request.headers.get("x-lantern-client")!="1":
                 return JSONResponse({"error":"ForbiddenOrigin","message":"Same-origin game request required"},status_code=403)
         response=await call_next(request)
-        response.headers["Cache-Control"]="no-store" if not request.url.path.startswith("/static/") else "public, max-age=3600"
+        response.headers["Cache-Control"]="no-store" if not request.url.path.startswith("/static/") else "no-cache, max-age=0"
         response.headers["X-Content-Type-Options"]="nosniff"
         response.headers["Referrer-Policy"]="same-origin"
         response.headers["Content-Security-Policy"]="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'"
@@ -78,10 +81,70 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return JSONResponse(result,status_code=status)
 
     @ui.get("/")
+    @ui.get("/watch")
     def index(): return FileResponse(WEB/"index.html")
 
+    def observation(role_id=None, token=None, data=None):
+        data=data or {}
+        view_name='spectator' if role_id is None else 'village'
+        try:
+            view=runtime.view_sync(universe,role_id,data['cursor'],identity_token=token) if data.get('cursor') else runtime.view_snapshot(universe,role_id,view_name,identity_token=token)
+        except ViewResetRequired:
+            view=runtime.view_snapshot(universe,role_id,view_name,identity_token=token)
+        first=not data.get('stream_cursor')
+        anchor=view.get('streams',{}).get('village')
+        if anchor is None:raise PermissionDenied('World does not expose an observation stream')
+        stream_cursor=data.get('stream_cursor') or anchor['history_cursor']
+        gap=False
+        try:
+            events=runtime.read_stream(universe,'village',role_id,identity_token=token,cursor=stream_cursor,limit=100)
+        except StreamResetRequired:
+            events=runtime.read_stream(universe,'village',role_id,identity_token=token,limit=100)
+            first=True; gap=True
+        return {'view':view,'events':events['events'],'stream_cursor':anchor['cursor'] if not data.get('stream_cursor') else events['cursor'],
+                'history_cursor':events['history_cursor'],'has_older':events['has_older'],'has_more':events['has_more'],
+                'history_truncated':events['history_truncated'],'history':first,'gap':gap,
+                'server_time':time.time(),'mode':'spectate' if role_id is None else 'play'}
+
+    def history_page(data, role_id=None, token=None):
+        if set(data)-{'history_cursor'}:raise InvalidArguments('Unexpected history arguments')
+        if not data.get('history_cursor'):raise InvalidArguments('A history cursor is required')
+        result=runtime.read_stream(universe,'village',role_id,identity_token=token,cursor=data['history_cursor'],limit=100)
+        if result['mode']!='history':raise InvalidArguments('Expected a history cursor')
+        return result
+
+    @ui.get('/watch/session')
+    async def watch_session():
+        try:return await asyncio.to_thread(observation)
+        except Exception as exc:return failure(exc)
+
+    @ui.post('/watch/sync')
+    async def watch_sync(request:Request):
+        try:
+            data=await body(request)
+            if set(data)-{'cursor','stream_cursor'}:raise InvalidArguments('Observer requests cannot choose a role')
+            return await asyncio.to_thread(observation,data=data)
+        except Exception as exc:return failure(exc)
+
+    @ui.post('/watch/history')
+    async def watch_history(request:Request):
+        try:return await asyncio.to_thread(history_page,await body(request))
+        except Exception as exc:return failure(exc)
+
+    @ui.post('/play/history')
+    async def play_history(request:Request):
+        try:
+            token,info=identity(request)
+            return await asyncio.to_thread(history_page,await body(request),info['role_id'],token)
+        except Exception as exc:return failure(exc)
+
+    @ui.get('/bridge/stream-client.js')
+    def stream_client():
+        from importlib.resources import files
+        return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
+
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.1.0"}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.0"}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -115,10 +178,10 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             def read():
                 token,info=identity(request)
                 boot=runtime.bootstrap(universe,info["role_id"],identity_token=token,record_presence=True)
-                snap=runtime.view_snapshot(universe,info["role_id"],"village",identity_token=token)
                 # Current snapshot is authoritative; only new cues are played on a fresh page.
                 page=runtime.read_changes_page(universe,info["role_id"],runtime.event_floor(universe),identity_token=token)
-                return {"view":snap,"role_id":info["role_id"],"event_cursor":page["latest_event_seq"],"access_mode":info["access_mode"]}
+                observed=observation(info["role_id"],token)
+                return {**observed,"role_id":info["role_id"],"event_cursor":page["latest_event_seq"],"access_mode":info["access_mode"]}
             return await asyncio.to_thread(read)
         except Exception as exc:return failure(exc)
 
@@ -128,6 +191,8 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             data=await body(request)
             def read():
                 token,info=identity(request)
+                if data.get("stream_cursor"):
+                    return observation(info["role_id"],token,data)
                 try: view=runtime.view_sync(universe,info["role_id"],data.get("cursor"),identity_token=token)
                 except ViewResetRequired: view=runtime.view_snapshot(universe,info["role_id"],"village",identity_token=token)
                 try: events=runtime.read_changes_page(universe,info["role_id"],data.get("after",0),limit=100,identity_token=token)
@@ -199,7 +264,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     class Dispatch:
         async def __call__(self,scope,receive,send):
             path=scope.get("path","")
-            target=mcp if path=="/mcp" or path.startswith("/mcp/") else ui if path=="/" or path.startswith(("/static/","/play/")) else api
+            target=mcp if path=="/mcp" or path.startswith("/mcp/") else ui if path=="/" or path.startswith(("/static/","/play/","/watch","/bridge/")) else api
             await target(scope,receive,send)
 
     base=mcp.app if isinstance(mcp,BearerIdentityMiddleware) else mcp
@@ -211,6 +276,9 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     app=Starlette(routes=[Mount("/",app=Dispatch())],lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=[parsed.hostname,"127.0.0.1","localhost","testserver"])
     app.state.runtime=runtime
+    trace_dir=os.getenv('LANTERN_TRACE_DIR')
+    app.add_middleware(SafeRequestTrace,path=Path(trace_dir)/('requests-'+str(os.getpid())+'.jsonl') if trace_dir else None,
+                       functions={f.name for f in WORLD.functions})
     return app
 
 

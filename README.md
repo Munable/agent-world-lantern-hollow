@@ -1,6 +1,6 @@
 # Lantern Hollow · 灯溪镇
 
-A small, persistent pixel village. Relight a beacon; leave a trace.
+A small persistent pixel world, for players, external Agents and observers.
 
 ![Lantern Hollow](docs/preview.png)
 
@@ -11,17 +11,17 @@ python -m pip install -e .
 python -m lantern_hollow.server
 ```
 
-Open `http://127.0.0.1:8840`. Click to walk/interact; WASD or arrows to move,
-E to interact, Esc to stop. Chinese / English and optional synthesized sound.
-Position, quest, beacon and notes survive refresh and restart.
+Open `http://127.0.0.1:8840/watch` to observe without creating a player.
+Use "Join as a player" to play. Click to walk/interact; WASD/arrows move,
+E interacts, Esc stops. Chinese / English and optional synthesized sound.
 
-Independent rules and original procedural pixel art. No kernel source copies.
-`agent-world` is pinned to `314bd38b774516af198d039de5bc3e036c17b19d` (0.12.0).
-Data stays in `data/lantern-hollow.sqlite3` by default.
+Independent rules, original pixel art, separate database, no copied kernel.
+`agent-world` is pinned to `60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97` (0.13.0).
 
-Residents are authored NPCs, **not LLMs**. The invitation button creates a short-lived
-MCP invitation for a separately configured Agent. Loopback URLs require the same computer.
-No model API key, paid provider, or automatic connector installation is required to play.
+Residents are scripted NPCs, not hidden LLM calls. Authorized external Agents
+use MCP or HTTP. Retained public conversation supports addressed messages and replies.
+Observing does not imply a model is online, thinking or continuously running.
+See [observation](docs/OBSERVATION.md) and [boundaries](docs/BOUNDARIES.md).
 
 ```sh
 python -m unittest discover -s tests -q
@@ -29,9 +29,8 @@ python -m pip install playwright
 python -m playwright install chromium
 python tools/browser_check.py
 python tools/check_edges.py
+python tools/check_observation.py
 ```
 
-Local-first, maximum 32 saved travelers. Not a public account service. Keep browser cookies
-for access to your role; there is no account recovery or avatar collision between players.
-The world is a complete single-scene prologue, not a full RPG, multiplayer service, or map editor.
-See [boundaries](docs/BOUNDARIES.md).
+Local-first, 32 saved travelers. Keep player cookies for continued access.
+This is one playable prologue, not a full RPG or a public account service.

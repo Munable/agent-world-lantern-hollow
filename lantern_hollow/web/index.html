@@ -4,13 +4,13 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=0.2.0">
 </head>
 <body>
 <header class="masthead">
  <a class="brand" href="/" aria-label="Lantern Hollow"><span class="lantern-mark" aria-hidden="true">✦</span><span><strong data-i18n="title">灯溪镇</strong><small>LANTERN HOLLOW</small></span></a>
  <p class="chapter" data-i18n="chapter">序章 · 归途有光</p>
- <nav aria-label="Main"><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
+ <nav aria-label="Main"><button id="join-mode" class="language">加入小镇</button><button id="watch-mode" class="language" hidden>只读观战</button><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
 </header>
 <main>
  <div class="world-layout">
@@ -20,7 +20,7 @@
     <canvas id="world" width="640" height="416" tabindex="0" aria-label="Village map. Click a location to walk. WASD or arrow keys to move. E to interact. Escape to stop."></canvas>
     <div id="bubbles" class="bubbles" aria-live="polite"></div>
     <div id="hover-label" class="hover-label" hidden></div>
-    <div class="welcome" id="welcome">
+    <div class="welcome" id="welcome" hidden>
      <div class="welcome-seal">✧</div><p class="eyebrow">A WORLD THAT REMEMBERS</p>
      <h1 data-i18n="welcomeTitle">黄昏还在，<br>等一盏归航的灯。</h1>
      <p data-i18n="welcomeBody">沿着溪流散步，和居民聊聊。你留下的光，会在下次回来时继续亮着。</p>
@@ -32,6 +32,17 @@
    <div class="world-bottom"><div class="traveler-chip"><canvas id="portrait" width="48" height="48"></canvas><span><strong id="traveler-name" data-i18n="visitor">远道而来的旅人</strong><small id="activity-label" data-i18n="ready">世界正在等你</small></span></div><div class="toolbar"><button id="say" disabled title="Public speech"><span>“ ”</span><span data-i18n="say">说句话</span></button><button id="intent" disabled title="Public intention, not private reasoning"><span>◌</span><span data-i18n="intent">公开打算</span></button><button id="stop" disabled title="Escape"><span>□</span><span data-i18n="stop">停下</span><kbd>ESC</kbd></button></div></div>
   </section>
   <aside class="journal" id="journal">
+   <section class="live-panel" aria-label="Live world observation">
+    <div class="section-title"><h2 id="live-title">世界现场</h2><span id="traveler-count">0</span></div>
+    <p class="small" id="watch-health" role="status">正在读取服务器…</p>
+    <p class="small" id="presence-boundary">角色存在不代表模型持续在线</p>
+    <div id="travelers" class="travelers"></div>
+    <div class="section-title"><h3 id="timeline-title">事件与对话</h3><select id="event-filter" aria-label="Filter events"><option value="all">全部</option><option value="speech">对话</option><option value="action">动作</option></select></div>
+    <p id="history-notice" class="small">历史记录不作为正在发生的动画播放。</p>
+    <ol id="timeline" class="timeline" aria-label="World timeline"></ol>
+    <button id="load-history" class="text-button" hidden>读取更早记录</button>
+   </section>
+   <div class="player-journal">
    <div class="journal-head"><span class="eyebrow">TRAVELER'S JOURNAL</span><span class="journal-leaf">❧</span></div>
    <h2 data-i18n="journalTitle">今晚的小事</h2><p class="journal-intro" data-i18n="journalIntro">让一束光，重新照向溪流。</p>
    <ol class="quest-list">
@@ -47,11 +58,12 @@
    <div class="section-title"><h3 data-i18n="notesTitle">后来的人会看见</h3><button id="board" class="text-button" data-i18n="visitBoard">留言板 ↗</button></div>
    <div id="notes" class="notes"><p data-i18n="emptyNotes">这里还很安静。第一句话，留给你。</p></div>
    <button id="agent" class="agent-link" disabled><span>◈</span><span data-i18n="inviteAgent">邀请一个外部 Agent</span><span>↗</span></button>
+   </div>
   </aside>
  </div>
  <footer><p><span class="footer-star">✧</span> <span data-i18n="footer">世界留住足迹，旅人带走故事。</span></p><div><span id="save-label" data-i18n="serverTruth">服务器保存 · 不止于此刻</span><span class="sep">/</span><button id="journal-toggle" data-i18n="showJournal">旅人手记</button></div></footer>
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js"></script>
+<script type="module" src="/static/app.js?v=0.2.0"></script>
 </body></html>
