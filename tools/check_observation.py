@@ -93,6 +93,18 @@ def main():
         expect(page.locator('#timeline')).to_contain_text('<img src=x',timeout=15000)
         assert page.locator('#timeline img').count()==0
         report['untrusted_public_text_not_executed']=True
+        call(clients[0],'town.interact',{'target':'board'})
+        deadline=time.monotonic()+20
+        while time.monotonic()<deadline:
+            state=call(clients[0],'town.look',{})['result']['meta']['self']
+            if state['movement'] is None:break
+            page.wait_for_timeout(100)
+        else:raise AssertionError('note author never reached the board')
+        call(clients[0],'town.note',{'text':'A durable note visible without creating a player.'})
+        expect(page.locator('#public-notes')).to_contain_text('A durable note visible without creating a player.',timeout=10000)
+        expect(page.locator('#timeline')).to_contain_text('A durable note visible without creating a player.')
+        report['persistent_notes_visible_to_observers']=True
+
         # Observer cannot use action or invitation endpoints even while seeing the complete public world.
         denied=page.request.post(server.url+'/play/action',headers={'X-Lantern-Client':'1'},data={'function':'town.stop','operation_id':'deny','arguments':{}})
         assert denied.status==401

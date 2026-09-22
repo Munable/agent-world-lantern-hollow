@@ -180,13 +180,13 @@ export class VillageRenderer{
   for(const t of this.map.targets)drawables.push({y:(t.y+1)*T,draw:()=>this.targetObject(c,t,now)});
   const actors=Object.values(this.scene?.entities||{}).filter(a=>a.kind==='traveler');
   for(const a of actors){const p=this.actorPosition(a);const colocated=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));
-   const visualOffset=(colocated.findIndex(x=>x.role_id===a.role_id)-(colocated.length-1)/2)*.30;
+   const visualOffset=(colocated.findIndex(x=>x.role_id===a.role_id)-(colocated.length-1)/2)*.55;
    drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,x:p.x+visualOffset,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
   }
   for(const [x,y] of [[15,12],[23,12],[26,11],[31,12],[10,21],[20,21]])drawables.push({y:(y+1)*T,draw:()=>this.lamp(c,x,y,now)});
   drawables.sort((a,b)=>a.y-b.y);drawables.forEach(d=>d.draw());
   // Nameplates identify real entered travelers; emphasis does not imply a model is online.
-  for(const a of actors){const p=this.actorPosition(a),x=p.x*T+8,y=(p.y+1)*T-43;
+  for(const a of actors){const p=this.actorPosition(a);const stack=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));const index=stack.findIndex(other=>other.role_id===a.role_id);const x=p.x*T+8+(index-(stack.length-1)/2)*T*.55,y=(p.y+1)*T-43-index*11;
    const label=[...a.name].slice(0,14).join('');c.save();c.font='7px monospace';c.textAlign='center';
    const w=Math.ceil(c.measureText(label).width)+8;rect(c,x-w/2,y-7,w,10,'rgba(15,30,31,.86)');
    c.fillStyle=a.role_id===this.focusRole?'#ffe2a0':'#e1e6ce';c.fillText(label,Math.round(x),Math.round(y));

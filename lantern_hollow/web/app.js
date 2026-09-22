@@ -16,7 +16,7 @@ let mode='spectate',streamCursor=null,historyCursor=null,historyAvailable=false,
 const ledger=new EventLedger(600),bubbleQueue=new BubbleQueue();
 let rosterSignature='',timelineSignature='',filterKind='all';
 const pendingKey='lh.pending';
-function clearSession(){++generation;ledger.clear();bubbleQueue.clear();streamCursor=null;historyCursor=null;$('#timeline').replaceChildren();$('#travelers').replaceChildren();text($('#traveler-count'),'0');rosterSignature=timelineSignature='';clearTimeout(pollTimer);roleId=null;view=null;canControl=false;selected=null;held.clear();renderer?.update(null,null);$('#bubbles').replaceChildren();dialogueStamp='';$('#welcome').hidden=false;$('#completion').hidden=true;completionShown=false;$$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);updateUI(true);}
+function clearSession(){++generation;ledger.clear();bubbleQueue.clear();streamCursor=null;historyCursor=null;$('#timeline').replaceChildren();$('#travelers').replaceChildren();$('#public-notes').replaceChildren();delete $('#public-notes').dataset.signature;text($('#traveler-count'),'0');rosterSignature=timelineSignature='';clearTimeout(pollTimer);roleId=null;view=null;canControl=false;selected=null;held.clear();renderer?.update(null,null);$('#bubbles').replaceChildren();dialogueStamp='';$('#welcome').hidden=false;$('#completion').hidden=true;completionShown=false;$$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);updateUI(true);}
 function toast(message){text($('#toast'),message);$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4200);}
 class RequestError extends Error{constructor(status,body){super(body.message||tr('failed'));this.status=status;this.code=body.error;}}
 async function request(path,{method='GET',data}={}){
@@ -139,6 +139,7 @@ function describeEvent(event){
  const names={walk:['行走','walk'],repair:['修灯','repair'],collect:['收集星片','collect'],arrive:['入场','arrive'],note:['留言','leave a note']};
  const phases={start:['开始','started'],finish:['完成','finished'],cancel:['取消','cancelled']};
  if(p.channel==='speech'||p.channel==='intent')return (lang==='zh'?d.text:d.en||d.text)||'';
+ if(p.name==='note'&&d.text)return who+' · '+(lang==='zh'?'留言：':'Note: ')+d.text;
  return who+' · '+(names[p.name]?.[lang==='zh'?0:1]||p.name||event.kind)+' · '+(phases[p.phase]?.[lang==='zh'?0:1]||p.phase||'');
 }
 function updateLiveUI(force=false){
@@ -148,6 +149,14 @@ function updateLiveUI(force=false){
  text($('#traveler-count'),String(actors.length));text($('#presence-boundary'),zh?'角色存在不代表模型持续在线；只展示已接受的世界动作。':'Presence is not proof of a running model. Only accepted world actions are shown.');
  text($('#join-mode'),zh?'加入小镇':'Join as a player');text($('#watch-mode'),zh?'只读观战':'Observe');
  text($('#load-history'),zh?'读取更早记录':'Load earlier records');
+ text($('#public-notes-title'),zh?'旅人留下的话':'Persistent traveler notes');
+ const notes=view.snapshot.meta.notes||[],notesKey=JSON.stringify([notes,lang]);
+ if($('#public-notes').dataset.signature!==notesKey){
+  $('#public-notes').dataset.signature=notesKey;$('#public-notes').replaceChildren();
+  if(!notes.length){const empty=document.createElement('p');empty.textContent=tr('emptyNotes');$('#public-notes').append(empty);}
+  for(const note of notes.slice(-10).reverse()){const p=document.createElement('p'),cite=document.createElement('cite');p.textContent=note.text;cite.textContent='— '+note.name;p.append(cite);$('#public-notes').append(p);}
+ }
+
  for(const option of $('#event-filter').options)option.textContent=({all:['全部','All'],speech:['对话','Speech'],action:['动作','Actions']})[option.value][zh?0:1];
  const ok=renderer.connected && Date.now()-lastSuccess<6000;
  $('#watch-health').classList.toggle('stale',!ok);
