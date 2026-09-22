@@ -4,8 +4,6 @@ A small, persistent pixel village. Relight a beacon; leave a trace.
 
 ![Lantern Hollow](docs/preview.png)
 
-![Lantern Hollow](docs/preview.png)
-
 ```sh
 python -m venv .venv
 # Activate .venv, then:
