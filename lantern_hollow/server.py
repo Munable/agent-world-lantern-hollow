@@ -12,7 +12,7 @@ import uuid
 import time
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.applications import Starlette
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -27,6 +27,7 @@ from agent_world.errors import AuthenticationRequired, InvalidArguments, Identit
 from agent_world.world_views import ViewResetRequired
 from agent_world.world_streams import StreamResetRequired
 from agent_world.diagnostics import SafeRequestTrace
+from .onboarding import checked_origin, invitation_prompt, connection_guide, GUIDE_VERSION
 from .world import WORLD
 from .map import manifest
 
@@ -35,13 +36,14 @@ WEB=Path(__file__).parent/"web"
 CORE_PIN="60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97"
 
 
-def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow"):
+def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow", agent_public_url=None):
     parsed=urlsplit(public_url)
     if parsed.scheme not in ("http","https") or not parsed.hostname or parsed.username or parsed.password or parsed.path not in ("","/") or parsed.query or parsed.fragment:
         raise ValueError("public_url must be a credential-free origin")
     if parsed.scheme!="https" and parsed.hostname not in ("127.0.0.1","localhost","::1"):
         raise ValueError("Public deployments require HTTPS")
     public_url=public_url.rstrip("/")
+    agent_origin=checked_origin(agent_public_url or public_url)
     installer=lambda runtime,u:install_world(runtime,u,WORLD)
     mcp,_,runtime=create_mcp_app(db_path,universe,auth_required=True,installer=installer,host=parsed.hostname)
     api=create_world_http(db_path,universe,auth_required=True,installer=installer)
@@ -144,7 +146,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
 
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.0"}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.1"}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -229,6 +231,8 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         try:
             data=await body(request)
             name=data.get("name","访客 Agent")
+            language=data.get("language","zh")
+            if language not in ("zh","en"):raise InvalidArguments("Unsupported invitation language")
             if not isinstance(name,str) or not 1<=len(name.strip())<=24:raise InvalidArguments("Invalid Agent name")
             def issue():
                 _,info=identity(request)
@@ -236,7 +240,9 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
                 role=runtime.create_role(name.strip())
                 ticket=runtime.issue_join_ticket(universe,role["role_id"],ttl_seconds=600)
                 return {"role_id":role["role_id"],"expires_at":ticket["expires_at"],"ticket":ticket["ticket"],
-                        "mcp_url":public_url+"/mcp","exchange_url":public_url+"/v1/join/exchange"}
+                        "mcp_url":agent_origin+"/mcp","exchange_url":agent_origin+"/v1/join/exchange",
+                        "guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
+                        "instructions":invitation_prompt(agent_origin,ticket["ticket"],language=language)}
             return await asyncio.to_thread(issue)
         except Exception as exc:return failure(exc)
 
@@ -248,6 +254,10 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
 
     # Static world code and optional browser helper are data-only assets, never kernel copies.
     ui.mount("/static",StaticFiles(directory=WEB),name="static")
+
+    @api.get("/agent")
+    def agent_guide():
+        return PlainTextResponse(connection_guide(agent_origin),headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"})
 
     @api.post("/v1/join/exchange")
     async def exchange(request:Request):
@@ -288,8 +298,9 @@ def main():
     parser.add_argument("--port",type=int,default=8840)
     parser.add_argument("--host",default="127.0.0.1")
     parser.add_argument("--public-url")
+    parser.add_argument("--agent-public-url",help="Trusted externally reachable origin for Agent invitations; does not change browser Origin policy")
     args=parser.parse_args()
     import uvicorn
-    uvicorn.run(create_app(args.db,public_url=args.public_url or f"http://127.0.0.1:{args.port}"),host=args.host,port=args.port,log_level="warning")
+    uvicorn.run(create_app(args.db,public_url=args.public_url or f"http://127.0.0.1:{args.port}",agent_public_url=args.agent_public_url),host=args.host,port=args.port,log_level="warning")
 
 if __name__=="__main__":main()

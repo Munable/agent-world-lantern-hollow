@@ -29,4 +29,6 @@ jobs:
         run: python tools/check_edges.py
       - if: runner.os == 'Linux'
         run: python tools/check_observation.py
+      - if: runner.os == 'Linux'
+        run: python tools/check_onboarding.py
       - run: python -m pip wheel --no-deps --wheel-dir dist .
