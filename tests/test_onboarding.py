@@ -15,10 +15,20 @@ class OnboardingPromptTests(unittest.TestCase):
         response=self.client.post('/play/join',headers={'X-Lantern-Client':'1'},json={'name':'访客'})
         self.assertEqual(response.status_code,200,response.text)
     def test_resume_is_client_neutral_and_does_not_embed_identity(self):
-        text=resume_prompt("https://world.example.test")
-        self.assertIn("GET",text);self.assertNotIn("awid_",text);self.assertNotIn("awjt_",text)
-        self.assertNotRegex(text,r"ChatGPT|Claude|Codex|OpenCode|你是|You are")
-        self.assertIn("/v1/whoami",connection_guide("https://world.example.test"))
+        zh=resume_prompt("https://world.example.test")
+        en=resume_prompt("https://world.example.test",language="en")
+        for text in (zh,en):
+            self.assertNotIn(chr(10),text);self.assertNotIn("awid_",text);self.assertNotIn("awjt_",text)
+            self.assertIn("https://world.example.test/agent",text)
+            self.assertIn("https://world.example.test/v1/whoami",text)
+            self.assertIn("https://world.example.test/v1/bootstrap",text)
+            self.assertNotRegex(text,r"ChatGPT|Claude|Codex|OpenCode|你是|You are")
+        self.assertIn("不要要求用户粘贴凭据",zh)
+        self.assertIn("host-managed authentication",en)
+        guide=connection_guide("https://world.example.test")
+        self.assertIn("Reading /agent alone is not resumed access",guide)
+        self.assertIn("do NOT ask the user to reveal or paste the credential",guide)
+        self.assertIn("host-managed request helper",guide)
     def test_prompt_is_one_line_and_client_neutral(self):
         for lang in ('zh','en'):
             p=invitation_prompt('https://world.example.test','awjt_example',language=lang)
@@ -39,6 +49,7 @@ class OnboardingPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         self.assertTrue(response.headers['content-type'].startswith('text/plain'))
         self.assertIn('no-store',response.headers['cache-control'])
+        self.assertIn('Guide version: 3',response.text)
         self.assertIn('https://agents.example.test/v1/bootstrap',response.text)
         self.assertNotIn('awjt_',response.text);self.assertNotIn('awid_',response.text)
         self.assertNotRegex(response.text,r'(?i)if.*(ChatGPT|Claude|Codex|OpenCode|Kimi)')
@@ -57,6 +68,18 @@ class OnboardingPromptTests(unittest.TestCase):
         r=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'language':'en'})
         self.assertEqual(r.status_code,200,r.text)
         self.assertEqual(r.json()['instructions'],invitation_prompt('https://agents.example.test',r.json()['ticket'],language='en'))
+    def test_resume_endpoint_never_mints_role_ticket_or_identity(self):
+        self.join_player()
+        w=self.app.state.runtime
+        with w._conn(readonly=True) as c:before=c.execute('SELECT COUNT(*) FROM roles').fetchone()[0]
+        r=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh'})
+        self.assertEqual(r.status_code,200,r.text)
+        data=r.json()
+        self.assertEqual(data['mode'],'resume');self.assertEqual(data['guide_version'],'3')
+        self.assertEqual(data['instructions'],resume_prompt('https://agents.example.test'))
+        self.assertEqual(data['guide_url'],'https://agents.example.test/agent')
+        for forbidden in ('ticket','role_id','exchange_url','token'):self.assertNotIn(forbidden,data)
+        with w._conn(readonly=True) as c:self.assertEqual(c.execute('SELECT COUNT(*) FROM roles').fetchone()[0],before)
     def test_bad_language_does_not_create_role(self):
         self.join_player()
         w=self.app.state.runtime
@@ -64,9 +87,10 @@ class OnboardingPromptTests(unittest.TestCase):
         r=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'language':'bad'})
         self.assertEqual(r.status_code,422)
         with w._conn(readonly=True) as c:self.assertEqual(c.execute('SELECT COUNT(*) FROM roles').fetchone()[0],before)
-    def test_observer_cannot_mint_invitation(self):
-        r=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'bad'})
-        self.assertEqual(r.status_code,401)
+    def test_observer_cannot_mint_or_resume_control_identity(self):
+        invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'bad'})
+        resume=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh'})
+        self.assertEqual(invite.status_code,401);self.assertEqual(resume.status_code,401)
     def test_exact_guide_entry_shape_runs_without_guessed_api(self):
         self.join_player()
         invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'world guest'}).json()
@@ -76,16 +100,26 @@ class OnboardingPromptTests(unittest.TestCase):
         entered=self.client.post('/v1/functions/town.enter/invoke',headers=headers,json=data['next']['arguments'])
         self.assertEqual(entered.status_code,200,entered.text)
         self.assertTrue(entered.json()['result']['entered'])
-        self.assertEqual(self.client.get('/v1/bootstrap',headers=headers).status_code,200)
+        role_id=data['identity']['role_id']
+        with self.app.state.runtime._conn(readonly=True) as c:roles_before=c.execute('SELECT COUNT(*) FROM roles').fetchone()[0]
+        whoami=self.client.get('/v1/whoami',headers=headers)
+        self.assertEqual(whoami.status_code,200,whoami.text);self.assertEqual(whoami.json()['role_id'],role_id)
+        bootstrap=self.client.get('/v1/bootstrap',headers=headers)
+        self.assertEqual(bootstrap.status_code,200,bootstrap.text);self.assertEqual(bootstrap.json()['role_id'],role_id)
+        with self.app.state.runtime._conn(readonly=True) as c:self.assertEqual(c.execute('SELECT COUNT(*) FROM roles').fetchone()[0],roles_before)
         self.assertEqual(self.client.post('/v1/functions/town.look/invoke',headers=headers,json={'arguments':{}}).status_code,200)
         self.assertEqual(self.client.post('/v1/streams/conversation/read',headers=headers,json={'limit':10}).status_code,200)
     def test_html_uses_server_instructions_not_a_second_hardcoded_prompt(self):
         js=(Path(__file__).resolve().parents[1]/'lantern_hollow/web/app.js').read_text(encoding='utf-8')
-        self.assertIn('const instructions=r.instructions',js)
+        self.assertIn("showInstructions(r.instructions,'Private Agent invitation')",js)
+        self.assertIn("request('/play/agent/resume'",js)
+        self.assertIn("showInstructions(r.instructions,'Private Agent resume')",js)
         self.assertNotIn('Ask the human to configure the connector',js)
     def test_guide_includes_failure_and_wire_format_boundaries(self):
         guide=connection_guide('https://world.test')
-        for expected in ('UTF-8','charset=utf-8','Unicode escapes','including GET reads','Do NOT recount','Expired ticket','read-only URL','do NOT stop to install/configure MCP'):
+        for expected in ('UTF-8','charset=utf-8','Unicode escapes','including GET reads','Do NOT recount','Expired ticket',
+                         'read-only URL','do NOT stop to install/configure MCP','Reading /agent alone is not resumed access',
+                         'do NOT ask the user to reveal or paste the credential','host-managed request helper'):
             self.assertIn(expected,guide)
 
 if __name__=='__main__':unittest.main()

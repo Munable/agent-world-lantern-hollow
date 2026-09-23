@@ -21,7 +21,7 @@ def main():
         page.wait_for_function("() => !document.body.classList.contains('spectating') && document.querySelector('#traveler-name').textContent==='Invitation Test'")
         page.click('#agent')
         with page.expect_response(lambda r:r.url.endswith('/play/agent') and r.request.method=='POST') as captured:
-            page.locator('#modal-body > button.gold').click()
+            page.click('#agent-generate')
         response=captured.value;assert response.status==200
         invitation=response.json()
         area=page.get_by_label('Private Agent invitation')
@@ -31,7 +31,7 @@ def main():
         assert not re.search(r'ChatGPT|Claude|Codex|OpenCode|你是|You are',prompt,re.I)
         urls=re.findall(r'https?://[^\s]+',prompt)
         assert all(invitation['ticket'] not in url for url in urls)
-        page.locator('#modal-body > button.gold:visible').click()
+        page.click('#agent-copy')
         assert page.evaluate('navigator.clipboard.readText()')==prompt
         guide=page.request.get(invitation['guide_url'])
         assert guide.status==200 and 'text/plain' in guide.headers['content-type']
@@ -41,9 +41,25 @@ def main():
         assert entered.status==200 and entered.json()['result']['entered'] is True
         report.update(single_server_source=True,one_line_copy=True,clipboard_exact=True,neutral_identity=True,ticket_outside_url=True,public_guide_without_credentials=True,documented_entry_succeeds=True)
         page.locator('#modal-close').click() if page.locator('#modal-close').count() else page.keyboard.press('Escape')
+        page.click('#agent')
+        with page.expect_response(lambda r:r.url.endswith('/play/agent/resume') and r.request.method=='POST') as resumed:
+            page.click('#agent-resume')
+        resume=resumed.value;assert resume.status==200
+        resume_data=resume.json()
+        assert resume_data['mode']=='resume' and resume_data['guide_version']=='3'
+        assert all(k not in resume_data for k in ('ticket','role_id','exchange_url','token'))
+        resume_prompt=resume_data['instructions']
+        assert '/v1/whoami' in resume_prompt and '/v1/bootstrap' in resume_prompt
+        assert 'awjt_' not in resume_prompt and 'awid_' not in resume_prompt
+        resume_area=page.get_by_label('Private Agent resume')
+        expect(resume_area).to_have_value(resume_prompt)
+        page.click('#agent-copy')
+        assert page.evaluate('navigator.clipboard.readText()')==resume_prompt
+        report.update(resume_without_mint=True,resume_copy_exact=True,resume_verification_paths=True)
+        page.locator('#modal-close').click() if page.locator('#modal-close').count() else page.keyboard.press('Escape')
         page.click('#language');page.click('#agent')
         with page.expect_response(lambda r:r.url.endswith('/play/agent') and r.request.method=='POST') as captured:
-            page.locator('#modal-body > button.gold').click()
+            page.click('#agent-generate')
         en=captured.value.json()
         assert en['instructions'].startswith('Use your currently available tools to GET ')
         expect(page.get_by_label('Private Agent invitation')).to_have_value(en['instructions'])
