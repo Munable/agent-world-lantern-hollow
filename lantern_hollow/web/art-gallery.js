@@ -1,0 +1,10 @@
+import {loadSampleAssets,CLIPS} from './assets.js';
+let clip='idle',paused=matchMedia('(prefers-reduced-motion: reduce)').matches;const cards=[];
+const $=s=>document.querySelector(s),names={traveler:'蓝衣旅人',sage:'紫衣旅人',rose:'玫瑰旅人',keeper:'守灯人',smith:'匠人',gardener:'花匠'};
+for(const b of document.querySelectorAll('[data-clip]'))b.onclick=()=>{clip=b.dataset.clip;for(const x of document.querySelectorAll('[data-clip]'))x.setAttribute('aria-pressed',String(x===b));};
+$('#pause').onclick=()=>{paused=!paused;$('#pause').textContent=paused?'播放动画':'暂停动画';};
+try{const art=await loadSampleAssets();$('#status').textContent=`素材已载入 · ${Object.keys(art.manifest.frames).length} 帧 · ${art.manifest.version}`;$('#status').dataset.state='ready';
+ for(const kind of art.manifest.characters){const card=document.createElement('article'),canvas=document.createElement('canvas'),label=document.createElement('p');canvas.width=96;canvas.height=128;label.textContent=names[kind]||kind;card.append(canvas,label);$('#characters').append(card);cards.push([kind,canvas]);}
+ for(const [key,f]of Object.entries(art.manifest.frames).filter(([k])=>k.startsWith('prop/')||k.startsWith('building/'))){const card=document.createElement('article'),canvas=document.createElement('canvas'),label=document.createElement('p');canvas.width=190;canvas.height=190;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;const scale=Math.min(2,170/f.w,170/f.h);c.drawImage(art.image,f.x,f.y,f.w,f.h,(190-f.w*scale)/2,(190-f.h*scale)/2,f.w*scale,f.h*scale);label.textContent=key;card.append(canvas,label);$('#props').append(card);}
+ function draw(t){const frame=paused?0:Math.floor(t/1000*CLIPS[clip].fps)%4;for(const [kind,canvas]of cards){const c=canvas.getContext('2d');c.clearRect(0,0,96,128);c.imageSmoothingEnabled=false;c.drawImage(art.frame(kind,$('#direction').value,clip,frame),0,0,96,128);canvas.dataset.clip=clip;}requestAnimationFrame(draw);}requestAnimationFrame(draw);
+}catch(error){$('#status').dataset.state='error';$('#status').textContent='素材加载失败：'+error.message;}

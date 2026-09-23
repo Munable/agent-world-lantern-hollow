@@ -1,4 +1,5 @@
-import {VillageRenderer} from './render.js?v=0.3.0';
+import {loadSampleAssets} from './assets.js';
+import {VillageRenderer} from './render.js?v=0.4.0';
 import {bindCameraInput} from './camera.js?v=0.3.0';
 import {bubbleFromEvent,cueSource} from './presentation.js';
 import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.1';
@@ -285,6 +286,7 @@ function sourceLabel(source,channel){
 function renderBubbles(){
  if(!renderer||!view)return;
  const now=renderer.now(),shown=bubbleQueue.active(now);
+ renderer.speaking=new Set(shown.filter(c=>c.channel==='speech').map(c=>c.subject));
  const stamp=JSON.stringify(shown.map(c=>[c.id,lang]));
  if(stamp!==dialogueStamp){dialogueStamp=stamp;$('#bubbles').replaceChildren();for(const c of shown){
   const el=document.createElement('div');el.className='bubble'+(c.channel==='intent'?' intent':'');el.dataset.subject=c.subject;
@@ -433,8 +435,13 @@ $('#audio').onclick=()=>{audioOn=!audioOn;$('#audio').setAttribute('aria-pressed
 let blocked=new Set();
 function hit(e){const r=$('#world').getBoundingClientRect(),p=renderer.camera.unproject((e.clientX-r.left)/r.width*renderer.canvas.width,(e.clientY-r.top)/r.height*renderer.canvas.height);return {x:p.x/16,y:p.y/16};}
 function hitTarget(pos){return map.targets.find(t=>Math.abs(pos.x-(t.x+.5))<.9&&pos.y>t.y-.9&&pos.y<t.y+1.2)||(pos.x>=32&&pos.x<=36&&pos.y>=2&&pos.y<=10?map.targets.find(t=>t.id==='beacon'):null);}
+async function prepareSampleAssets(){
+ const status=document.createElement('a');status.href='/static/art-gallery.html';status.target='_blank';status.rel='noopener';status.id='asset-status';status.setAttribute('role','status');status.dataset.state='loading';status.textContent='素材加载中 / Loading art';$('#camera-status').after(status);
+ try{const pack=await loadSampleAssets();renderer.useAssets(pack);status.dataset.state='ready';status.textContent='示例素材 / Sample art';status.title=pack.manifest.version;renderer.portrait($('#portrait'),view?.snapshot?.entities?.[preferredRole]?.appearance||view?.snapshot?.meta?.self?.appearance||'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));}
+ catch(error){status.dataset.state='fallback';status.textContent='素材不可用，使用基础图形 / Basic art';status.title=String(error.message).slice(0,120);}
+}
 async function boot(){
- translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
+ translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);prepareSampleAssets();bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
  $('#world').addEventListener('pointermove',e=>{const p=hit(e),target=hitTarget(p);renderer.hover=[Math.floor(p.x),Math.floor(p.y)];renderer.target=target?.id||selected;$('#world').style.cursor=target?'pointer':blocked.has(renderer.hover.join(','))?'not-allowed':'crosshair';const label=$('#hover-label');label.hidden=!target;if(target){text(label,targetName(target));const wrap=$('#canvas-wrap').getBoundingClientRect(),r=$('#world').getBoundingClientRect();const anchor=renderer.project(target.x,target.y);label.style.left=((r.left-wrap.left+anchor.x/100*r.width)/wrap.width*100)+'%';label.style.top=((r.top-wrap.top+anchor.y/100*r.height)/wrap.height*100)+'%';}});
  $('#world').addEventListener('pointerleave',()=>{renderer.hover=null;renderer.target=selected;$('#hover-label').hidden=true;});
  $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=Object.values(view?.snapshot.entities||{}).find(a=>a.kind==='traveler'&&Math.abs(renderer.actorPosition(a).x+.5-p.x)<.8&&Math.abs(renderer.actorPosition(a).y+.5-p.y)<1);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});

@@ -33,3 +33,5 @@ v0.4 复现的 BubbleQueue 出队期限缺陷已在内核 0.13.1 修复，并由
 兼容前端可以用不同画法，但获准事实、作者、结果与时间解释必须一致。未知装饰可降级，未知关键玩法不能假装支持。当前程序化像素美术不等于已有 3D 资产包。
 
 公开接口不等于全部数据公开。独立 origin 的 CORS、鉴权、资源和错误恢复必须实际测；打开更多窗口不应产生模型调用，但普通网络与数据库成本仍需测量。
+
+Front-end sample material integration and thread ownership: [asset acceptance](FRONTEND_ASSET_ACCEPTANCE.md).

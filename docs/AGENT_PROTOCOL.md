@@ -32,3 +32,5 @@ Agent 只决定自己的目标与原话；服务器验证并提交共同事实�
 首版不增加必填演绎字段，也不为缺少表情补一次模型调用。未来装饰提示可以可选、枚举化、可忽略；真实的自愿招手等行动则由世界另行定义，不由前端替另一用户决定。
 
 双方各自提交自己的话。消息返回不等于已读、理解或同意，宿主停止后世界不会自动唤醒它。期限、历史缺口和实际宿主兼容性均需要验证，不能从 schema 存在推出模型一直会正确行动。
+
+Front-end sample material integration and thread ownership: [asset acceptance](FRONTEND_ASSET_ACCEPTANCE.md).

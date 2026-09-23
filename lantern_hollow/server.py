@@ -44,7 +44,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     agent_origin=checked_origin(agent_public_url or public_url)
     agent_host=urlsplit(agent_origin).hostname
     observer_origins=tuple(checked_origin(origin) for origin in observer_origins)
-    public_reads={"/play/map","/watch/session","/watch/sync","/watch/history"}
+    public_reads={"/play/map","/watch/session","/watch/sync","/watch/history","/static/sample-assets.json","/static/sample-atlas.png"}
     installer=lambda runtime,u:install_world(runtime,u,WORLD)
     mcp,_,runtime=create_mcp_app(db_path,universe,auth_required=True,installer=installer,host=agent_host)
     api=create_world_http(db_path,universe,auth_required=True,installer=installer)
@@ -149,7 +149,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
 
     @ui.get("/play/map")
     def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":__version__,"world_id":WORLD.world_id,
-                               "universe":universe,"world_version":WORLD.version,"presentation_version":1}
+                               "universe":universe,"world_version":WORLD.version,"presentation_version":1,"assets":{"manifest":"/static/sample-assets.json","schema":"lantern-sample-assets/1"}}
 
     @ui.post("/play/join")
     async def join(request:Request):

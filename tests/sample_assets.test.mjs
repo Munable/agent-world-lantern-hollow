@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const code=readFileSync(new URL('../lantern_hollow/web/assets.js',import.meta.url),'utf8');
+const {validatePack,actionClip}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+const m=JSON.parse(readFileSync(new URL('../lantern_hollow/web/sample-assets.json',import.meta.url),'utf8'));
+assert.equal(Object.keys(validatePack(m).frames).length,400);
+assert.equal(actionClip({moving:true,busy:{}},true),'walk');
+assert.equal(actionClip({moving:false,busy:{}},true),'work');
+assert.equal(actionClip({},true),'talk');assert.equal(actionClip({},false),'idle');
+assert.throws(()=>validatePack({...m,schema:'unknown/9'}));
+assert.throws(()=>validatePack({...m,atlas:'https://other.example/a.png'}));
+assert.throws(()=>validatePack({...m,width:99999}));
+const broken=structuredClone(m);delete broken.frames['traveler/down/talk/0'];assert.throws(()=>validatePack(broken));
+const bounds=structuredClone(m);bounds.frames['traveler/down/talk/0'].x=m.width;assert.throws(()=>validatePack(bounds));
+console.log('sample assets: required frames, bounds, paths and semantic clip priority PASS');

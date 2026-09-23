@@ -36,3 +36,5 @@ body.spectating .journal{max-height:calc(100vh - 165px);overflow:auto}.bubble .t
 .bubble[hidden]{display:none}
 .event-source{font-size:10px;opacity:.75}
 @media(max-width:600px){.camera-bar{gap:5px;padding:7px 8px}.camera-bar>span{flex-basis:100%}.camera-bar button{min-height:36px}}
+
+#asset-status{font-size:10px;opacity:.7;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#asset-status[data-state=fallback]{opacity:1;color:#e6b780}

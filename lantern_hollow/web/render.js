@@ -1,4 +1,5 @@
 // Original pixel-art renderer. World positions and actions always come from the server.
+import {CLIPS,actionClip} from './assets.js';
 import {ServerClock} from './presentation.js';
 import {SceneCamera} from './camera.js?v=0.3.0';
 const T=16;
@@ -9,7 +10,8 @@ function poly(c,p,color){c.fillStyle=color;c.beginPath();p.forEach(([x,y],i)=>i?
 function ellipse(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
 function line(c,a,b,color,width=1){c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(...a);c.lineTo(...b);c.stroke();}
 
-function sprite(kind,dir,frame){
+export function sprite(kind,dir,frame,clip='walk'){
+ const cycle=frame; if(clip!=='walk')frame=0;
  const canvas=document.createElement('canvas');canvas.width=24;canvas.height=32;const c=canvas.getContext('2d');
  const palettes={traveler:['#44677b','#81a6a0','#583f36','#e6b780'],sage:['#646284','#b7b1cc','#cbc5b8','#e1b994'],rose:['#8c576a','#c494a0','#49382e','#e4b392'],keeper:['#777e70','#c4b59b','#cfb98b','#deb391'],smith:['#785849','#ba8660','#453836','#dba780'],gardener:['#516f54','#9daa77','#775541','#ecc197']};
  const [coat,trim,hair,skin]=palettes[kind]||palettes.traveler;
@@ -34,6 +36,9 @@ function sprite(kind,dir,frame){
  if(kind==='gardener'){rect(c,4,7,18,2,'#b29d6e');rect(c,7,4,11,3,'#c8b581');rect(c,14,5,3,2,'#9c715b');}
  if(kind==='keeper'){rect(c,7,5,11,2,'#789190');rect(c,9,3,7,2,'#668580');rect(c,18,21-step,3,5,'#f1c783');}
  if(kind==='smith'){rect(c,10,18,6,7,'#55413b');rect(c,13,18,1,5,'#9a7860');}
+ if(clip==='talk'&&!back){const mouth=cycle%2===0?'#764e46':skin;rect(c,side?16:12,14,side?2:3,1+cycle%2,mouth);}
+ if(clip==='idle'&&cycle===3&&!back){rect(c,side?14:9,11,2,2,skin);rect(c,side?14:9,12,2,1,'#26333a');if(!side){rect(c,15,11,2,2,skin);rect(c,15,12,2,1,'#26333a');}}
+ if(clip==='work'){const lift=[0,3,6,2][cycle%4];rect(c,20,18-lift,2,9,'#aa8358');rect(c,17,16-lift,7,4,'#adb8b0');rect(c,17,16-lift,7,1,'#e1ddbf');}
  return canvas;
 }
 
@@ -41,12 +46,13 @@ export class VillageRenderer{
  constructor(canvas,map){
   this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;canvas.width=map.width*T;canvas.height=map.height*T;
   this.ctx.imageSmoothingEnabled=false;this.bg=document.createElement('canvas');this.bg.width=canvas.width;this.bg.height=canvas.height;
-  this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
+  this.assets=null;this.speaking=new Set();this.lastClips={};this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
   this.camera=new SceneCamera(canvas.width,canvas.height);this.drawBase();
  }
- update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);if(!scene){this.camera.overview();this.focusRole=null;this.particles=[];}}
+ update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);if(!scene){this.camera.overview();this.focusRole=null;this.particles=[];this.speaking.clear();}}
  now(){return this.clock.now();}
- getFrame(kind,dir,frame){const key=`${kind}:${dir}:${frame}`;if(!this.atlas.has(key))this.atlas.set(key,sprite(kind,dir,frame));return this.atlas.get(key);}
+ useAssets(assets){this.assets=assets;this.atlas.clear();this.drawBase();}
+ getFrame(kind,dir,frame,clip='idle'){const loaded=this.assets?.frame(kind,dir,clip,frame);if(loaded)return loaded;const key=`${kind}:${dir}:${clip}:${frame}`;if(!this.atlas.has(key))this.atlas.set(key,sprite(kind,dir,frame,clip));return this.atlas.get(key);}
  actorPosition(a,now=this.now()){
   const m=a?.movement;if(!m)return {x:a?.position?.[0]??18,y:a?.position?.[1]??21,dir:a?.facing||'up',moving:false};
   const s=Math.max(0,Math.min((now-m.start_at)/m.step_seconds,m.path.length-1)),i=Math.floor(s),j=Math.min(i+1,m.path.length-1),f=s-i;
@@ -67,7 +73,8 @@ export class VillageRenderer{
   const c=this.bg.getContext('2d');c.imageSmoothingEnabled=false;
   for(let y=0;y<this.map.height;y++)for(let x=0;x<this.map.width;x++){
    const k=this.map.tiles[y][x],px=x*T,py=y*T,n=x+y*77,r=rand(n);
-   if(k==='water'){rect(c,px,py,T,T,['#294e58','#2c535d','#305b62'][n%3]);for(let i=0;i<3;i++)rect(c,px+Math.floor(rand(n+i*3)*12),py+i*5,4,1,'#48767a');}
+   if(this.assets?.draw(c,'tile/'+k,px,py)){}
+   else if(k==='water'){rect(c,px,py,T,T,['#294e58','#2c535d','#305b62'][n%3]);for(let i=0;i<3;i++)rect(c,px+Math.floor(rand(n+i*3)*12),py+i*5,4,1,'#48767a');}
    else if(k==='cliff'){
     rect(c,px,py,T,T,'#293f3e');rect(c,px,py+2,T,3,'#3b534a');rect(c,px+2,py+7,9,5,'#344940');rect(c,px+1,py+13,6,2,'#24383a');
    }else if(k==='bridge'){
@@ -91,6 +98,7 @@ export class VillageRenderer{
   for(const [x,y] of [[15,17],[23,9],[33,14],[8,13],[15,12]]){ellipse(c,x*T+5,y*T+9,7,3,'#3b5147');rect(c,x*T,y*T+6,11,4,'#92957a');rect(c,x*T+2,y*T+5,7,1,'#b1b59a');}
  }
  tree(c,x,y,seed,big=false){
+  if(this.assets?.draw(c,big?'prop/tree-large':'prop/tree',x*T+8,(y+1)*T))return;
   x=x*T+8;y=(y+1)*T;const scale=big?1.65:1;
   c.save();c.translate(Math.round(x),Math.round(y));c.scale(scale,scale);
   ellipse(c,0,-1,17,6,'#344c40');rect(c,-4,-27,8,25,'#3d3b30');rect(c,-2,-28,3,26,'#76654b');rect(c,1,-19,2,16,'#544d3a');
@@ -102,6 +110,7 @@ export class VillageRenderer{
  }
  building(c,b,now,lit){
   const x=b.x*T,y=b.y*T,w=b.w*T,h=b.h*T;
+  if(this.assets?.draw(c,`building/${b.kind}/${b.w}x${b.h}/${b.kind==='tower'&&lit?'lit':'base'}`,x+w/2,y+h))return;
   ellipse(c,x+w/2,y+h,w*.6,9,'#374738');
   if(b.kind==='tower'){
    rect(c,x+9,y-6,w-18,h+6,'#414e51');rect(c,x+12,y-8,w-24,h+8,'#919386');rect(c,x+17,y-8,w-34,h+8,'#b3afa0');
@@ -133,37 +142,38 @@ export class VillageRenderer{
   if(!this.reduced)for(let i=0;i<3;i++){let p=(now*.23+i*.3)%1;ellipse(c,x+w-21+p*11,ridge-18-p*26,3+p*4,2+p*3,`rgba(197,185,162,${.16*(1-p)})`);}
  }
  lamp(c,x,y,now){
+  if(this.assets?.draw(c,'prop/lamp',x*T+8,y*T+15))return;
   x=x*T+8;y=y*T+15;rect(c,x-1,y-24,3,26,'#3a3d34');rect(c,x-5,y-30,11,2,'#493e35');rect(c,x-4,y-28,9,10,'#463e36');rect(c,x-3,y-27,7,7,'#d49d56');rect(c,x-2,y-26,5,5,'#ffdc8f');rect(c,x-4,y-19,9,2,'#493e35');rect(c,x-3,y-1,7,2,'#6e6850');
  }
  targetObject(c,t,now){
   const x=t.x*T+8,y=(t.y+1)*T;
-  if(t.kind==='npc'){this.character(c,{kind:t.portrait,name:t.name,x:t.x,y:t.y,dir:t.id==='elia'?'left':'down',moving:false},now);return;}
+  if(t.kind==='npc'){this.character(c,{id:t.id,kind:t.portrait,name:t.name,x:t.x,y:t.y,dir:t.id==='elia'?'left':'down',moving:false},now);return;}
   if(t.kind==='shard'){
    if(this.scene?.meta.self?.shards?.includes(t.id))return;
+   if(this.assets?.draw(c,'prop/shard',x,y+(this.reduced?0:Math.sin(now*2+t.x)*2)))return;
    const bob=this.reduced?0:Math.sin(now*2+t.x)*2;
    ellipse(c,x,y-2,7,3,'#354a42');poly(c,[[x,y-16+bob],[x+5,y-9+bob],[x,y-3+bob],[x-4,y-9+bob]],'#e1b167');poly(c,[[x,y-16+bob],[x+2,y-9+bob],[x,y-4+bob],[x-3,y-9+bob]],'#ffe8a8');rect(c,x-7,y-17+bob,2,2,'#cabb80');return;
   }
   if(t.kind==='board'){
+   if(this.assets?.draw(c,'prop/board',x,y))return;
    rect(c,x-7,y-12,3,13,'#684c36');rect(c,x+6,y-12,3,13,'#684c36');rect(c,x-12,y-28,26,17,'#4a4036');rect(c,x-10,y-26,22,13,'#a98253');rect(c,x-7,y-23,7,8,'#e6d2a2');rect(c,x+2,y-22,6,6,'#d5b383');rect(c,x-12,y-30,26,3,'#706847');return;
   }
   if(t.kind==='bench'){
+   if(this.assets?.draw(c,'prop/bench',x,y))return;
    rect(c,x-13,y-17,29,3,'#b2a076');rect(c,x-13,y-12,29,3,'#b2a076');rect(c,x-15,y-5,33,4,'#988059');rect(c,x-12,y-2,3,5,'#4c4837');rect(c,x+12,y-2,3,5,'#4c4837');return;
   }
  }
  character(c,a,now){
-  const x=Math.round(a.x*T+8),y=Math.round((a.y+1)*T),frame=a.moving&&!this.reduced?Math.floor(now*9)%4:0;
+  const clip=actionClip(a,this.speaking.has(a.id));if(a.id)this.lastClips[a.id]=clip;
+  const x=Math.round(a.x*T+8),y=Math.round((a.y+1)*T),frame=this.reduced?0:Math.floor(now*CLIPS[clip].fps)%4;
   ellipse(c,x,y-1,6,2,'#30483d');
-  const bob=this.reduced?0:a.moving?(frame%2):Math.floor(now*.7)%4===0?1:0;c.drawImage(this.getFrame(a.kind||'traveler',a.dir,frame),x-12,y-29-bob);
+  const bob=this.reduced?0:a.moving?(frame%2):Math.floor(now*.7)%4===0?1:0;c.drawImage(this.getFrame(a.kind||'traveler',a.dir,frame,clip),x-12,y-29-bob);
   if(a.self){rect(c,x-2,y-34,5,1,'#efd59a');rect(c,x-1,y-33,3,1,'#efd59a');rect(c,x,y-32,1,1,'#efd59a');}
-  if(a.busy){
-   const lift=this.reduced?0:[0,3,6,2][Math.floor(now*7)%4];
-   rect(c,x+8,y-15-lift,2,8,'#aa8358');rect(c,x+5,y-18-lift,8,4,'#adb8b0');
-   rect(c,x+5,y-18-lift,8,1,'#e1ddbf');
-  }
   if(a.busy){const progress=Math.max(0,Math.min(1,(now-a.busy.start_at)/(a.busy.end_at-a.busy.start_at)));rect(c,x-10,y-39,20,3,'#263937');rect(c,x-9,y-38,18*progress,1,'#e4c37f');}
  }
  glow(c,x,y,r,alpha=.22){const grad=c.createRadialGradient(x,y,0,x,y,r);grad.addColorStop(0,`rgba(255,208,110,${alpha})`);grad.addColorStop(.3,`rgba(236,160,68,${alpha*.6})`);grad.addColorStop(1,'rgba(224,146,58,0)');c.fillStyle=grad;c.fillRect(x-r,y-r,r*2,r*2);}
  draw(nowMillis){
+  this.lastClips={};
   const now=this.now(),c=this.ctx,dt=Math.min(.05,(nowMillis-this.last)/1000||.016);this.last=nowMillis;
   const followed=this.scene?.entities?.[this.camera.followId];
   if(followed){const p=this.actorPosition(followed,now);this.camera.track(p.x*T+8,p.y*T+2);}
@@ -186,7 +196,7 @@ export class VillageRenderer{
   const actors=Object.values(this.scene?.entities||{}).filter(a=>a.kind==='traveler');
   for(const a of actors){const p=this.actorPosition(a);const colocated=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));
    const visualOffset=(colocated.findIndex(x=>x.role_id===a.role_id)-(colocated.length-1)/2)*.55;
-   drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,x:p.x+visualOffset,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
+   drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,id:a.role_id,x:p.x+visualOffset,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
   }
   for(const [x,y] of [[15,12],[23,12],[26,11],[31,12],[10,21],[20,21]])drawables.push({y:(y+1)*T,draw:()=>this.lamp(c,x,y,now)});
   drawables.sort((a,b)=>a.y-b.y);drawables.forEach(d=>d.draw());
@@ -211,6 +221,7 @@ export class VillageRenderer{
   const g=c.createRadialGradient(320,210,110,320,200,390);g.addColorStop(0,'rgba(14,25,31,0)');g.addColorStop(1,'rgba(11,24,29,.35)');c.fillStyle=g;c.fillRect(0,0,640,416);
   if(this.target){const t=this.map.targets.find(a=>a.id===this.target);if(t){const yy=t.y*T-28+(this.reduced?0:Math.sin(now*4)*2);poly(c,[[t.x*T+4,yy],[t.x*T+12,yy],[t.x*T+8,yy+4]],'#ffe1a0');}}
   c.restore();
+  this.canvas.dataset.assets=this.assets?'ready':'fallback';this.canvas.dataset.clips=JSON.stringify(this.lastClips);
  }
  portrait(canvas,kind){canvas.width=48;canvas.height=48;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;rect(c,0,0,48,48,'#304440');c.drawImage(this.getFrame(kind,'down',0),0,0,24,23,0,0,48,46);}
 }

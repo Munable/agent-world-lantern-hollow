@@ -1,0 +1,150 @@
+{
+  "scope": "Frontend, sample materials and controlled presentation acceptance only; autonomous Agent and kernel work belong to the architecture thread",
+  "version": "0.4.0",
+  "core_pin": "7d3609853db34f3402754bd0860fee96115a9de1",
+  "world_version": 2,
+  "tests": 80,
+  "browser_suites": 7,
+  "checks": [
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.64837019999686,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "node",
+        "tests/camera.test.mjs"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.04291639999428298,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/browser_check.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 43.24379829999816,
+      "log": "check-2.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_edges.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.759080800009542,
+      "log": "check-3.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_observation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.554545499995584,
+      "log": "check-4.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_onboarding.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.017772599996533,
+      "log": "check-5.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_semantic_presentation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 20.190303999988828,
+      "log": "check-6.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_camera.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.160491000002366,
+      "log": "check-7.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_sample_assets.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 33.8802091999969,
+      "log": "check-8.log"
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "pip",
+        "wheel",
+        "--no-deps",
+        "--wheel-dir",
+        "dist",
+        "."
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.237332500008051,
+      "log": "check-9.log"
+    }
+  ],
+  "visual_report": {
+    "loaded_art_idle_walk_talk_and_two_authors": true,
+    "work_clip_and_confirmed_scene_result": true,
+    "refresh_restores_character_without_old_speech": true,
+    "independent_origin_uses_same_png_without_credentials": true,
+    "six_materials_four_clips_and_mobile_gallery": true,
+    "mobile_and_reduced_motion": true,
+    "missing_atlas_explicit_without_world_failure": true,
+    "independent_missing_image_not_claimed_loaded": true,
+    "page_errors": [],
+    "frames": 400,
+    "model_calls": 0,
+    "scope": "Controlled frontend fixture, not autonomous Agent behavior or kernel acceptance",
+    "world_version": 2,
+    "core_pin": "7d3609853db34f3402754bd0860fee96115a9de1"
+  },
+  "art": {
+    "frames": 400,
+    "png_bytes": 89275,
+    "zip_bytes": 67420,
+    "atlas_sha256": "9169744fc3a7ce7715c6a87d9b827a2530ef69890d18e82ad4bd3fb424b425d1"
+  },
+  "video": {
+    "bytes": 3350880,
+    "sha256": "400163ed6366f7187fbe1a175df0150984c2a223029d5e8853e3beb9d2a4b0a9",
+    "scope": "Controlled test fixture recording, no autonomous model claim",
+    "default_preload": "none"
+  },
+  "secrets": "No identity tokens or private Agent context in art, JSON or video",
+  "ci": "Verify separately before merge",
+  "final_media_smoke": {
+    "gallery_and_demo_links": true,
+    "video_metadata_decoded": true,
+    "duration_seconds": 30.92,
+    "page_errors": [],
+    "pack_download_status": 200
+  },
+  "final_packaging": "0.4.0 wheel verified byte-for-byte for loader, PNG, JSON, ZIP, gallery and recorded demo",
+  "local_browser": "Installed Microsoft Edge driven through Playwright; CI uses installed Chromium on Linux"
+}
