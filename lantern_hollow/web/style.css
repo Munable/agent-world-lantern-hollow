@@ -26,3 +26,13 @@ body.spectating .journal{max-height:calc(100vh - 165px);overflow:auto}.bubble .t
 .public-notes-panel{margin-top:20px;padding-top:12px;border-top:1px solid #4a5e52}body:not(.spectating) .public-notes-panel{display:none}
 
 @media(max-width:540px){.masthead{padding-left:10px;padding-right:10px;gap:6px}.masthead nav{gap:2px;min-width:0}.masthead nav #join-mode,.masthead nav #watch-mode{margin-right:0;min-width:56px;max-width:72px;padding:6px 3px}.masthead nav .icon-button,.masthead nav .language{padding-left:3px;padding-right:3px}}
+/* Local camera controls never change character authority. */
+.camera-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;flex-wrap:wrap;background:#1b302f;border-bottom:1px solid #435149;color:#ddd8c2;font-size:12px}
+.camera-bar>span{flex:1 1 120px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camera-bar button{padding:6px 9px;border:1px solid #566256;border-radius:6px;background:#2d4139;color:inherit;cursor:pointer}
+.camera-bar button:disabled{opacity:.45;cursor:default}
+.camera-bar button[aria-pressed="true"]{border-color:#dcc28b}
+#world{touch-action:none}
+.bubble[hidden]{display:none}
+.event-source{font-size:10px;opacity:.75}
+@media(max-width:600px){.camera-bar{gap:5px;padding:7px 8px}.camera-bar>span{flex-basis:100%}.camera-bar button{min-height:36px}}

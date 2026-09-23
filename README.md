@@ -35,7 +35,7 @@ Agents submit semantic actions without requiring sub-agents or performance scrip
 The server validates shared facts; clients render permitted state/events. This design
 now has a [verified minimal slice](docs/PRESENTATION_ACCEPTANCE.md): four semantic interfaces,
 absolute bubble expiry, public role focus, source attribution and an [independent read-only viewer](examples/observer/README.md).
-Full camera, private cross-origin control and load testing are not included. Historical v0.1-v0.3 attachments and the v0.2
+Local follow/pan/zoom and mobile gestures are now implemented; see [camera acceptance](docs/CAMERA_ACCEPTANCE.md). Private cross-origin control and production-scale load testing remain outside this release. Historical v0.1-v0.3 attachments and the v0.2
 optional-performance schema pack are superseded as implementation guidance.
 
 ```sh
@@ -46,6 +46,8 @@ python tools/browser_check.py
 python tools/check_edges.py
 python tools/check_observation.py
 python tools/check_semantic_presentation.py
+node tests/camera.test.mjs
+python tools/check_camera.py
 ```
 
 Local-first, 32 saved travelers. Keep player cookies for continued access.

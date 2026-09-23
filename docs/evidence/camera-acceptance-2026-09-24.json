@@ -1,0 +1,62 @@
+{
+  "recorded_at": "2026-09-23T19:13:03.256452+00:00",
+  "base": "6200438",
+  "package_version": "0.3.0",
+  "core": "422fc56fd63d383fb4dd262981810d88e5db0c73",
+  "environment": "Isolated Windows worktree; Python 3.13, Node 24, Chrome/Playwright; disposable test databases",
+  "unit_tests": {
+    "count": 76,
+    "exit_code": 0,
+    "wall_seconds": 33.677
+  },
+  "browser_runs": [
+    {
+      "command": "tools/browser_check.py",
+      "exit_code": 0,
+      "seconds": 46.551
+    },
+    {
+      "command": "tools/check_edges.py",
+      "exit_code": 0,
+      "seconds": 8.658
+    },
+    {
+      "command": "tools/check_observation.py",
+      "exit_code": 0,
+      "seconds": 17.105
+    },
+    {
+      "command": "tools/check_onboarding.py",
+      "exit_code": 0,
+      "seconds": 4.842
+    },
+    {
+      "command": "tools/check_semantic_presentation.py",
+      "exit_code": 0,
+      "seconds": 23.578
+    },
+    {
+      "command": "tools/check_camera.py",
+      "exit_code": 0,
+      "seconds": 24.122
+    }
+  ],
+  "camera_assertions": {
+    "observer_keyboard_has_no_player_action": true,
+    "authenticated_drag_has_no_action": true,
+    "overview_and_zoom_hit_mapping": true,
+    "public_focus_does_not_change_cookie_authority": true,
+    "refresh_remembers_same_agent": true,
+    "select_other_does_not_replace_home_role": true,
+    "speech_expires_and_reload_does_not_replay": true,
+    "offline_action_and_server_restart_persist": true,
+    "mobile_layout_pinch_and_return": true,
+    "linked_role_switch_and_forget_survive_refresh": true,
+    "page_errors": []
+  },
+  "node_camera_test": "passed",
+  "wheel": "built and checked for current app.js and camera.js",
+  "autonomous_two_model_hosts": "not verified",
+  "production_load": "not verified",
+  "load_evidence": "observer-load-2026-09-24.json"
+}

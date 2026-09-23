@@ -4,18 +4,26 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css?v=0.2.5">
+  <link rel="stylesheet" href="/static/style.css?v=0.3.0">
 </head>
 <body>
 <header class="masthead">
  <a class="brand" href="/" aria-label="Lantern Hollow"><span class="lantern-mark" aria-hidden="true">✦</span><span><strong data-i18n="title">灯溪镇</strong><small>LANTERN HOLLOW</small></span></a>
  <p class="chapter" data-i18n="chapter">序章 · 归途有光</p>
- <nav aria-label="Main"><button id="join-mode" class="language">加入小镇</button><button id="watch-mode" class="language" hidden>只读观战</button><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
+ <nav aria-label="Main"><button id="join-mode" disabled class="language">加入小镇</button><button id="watch-mode" class="language" hidden>只读观战</button><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
 </header>
 <main>
  <div class="world-layout">
   <section class="world-frame" aria-label="Interactive village">
    <div class="world-top"><div class="location"><span class="small-diamond">◆</span> <span data-i18n="location">灯溪镇 · 溪岸</span><small data-i18n="evening">一个缓慢的黄昏</small></div><div class="connection" id="connection" role="status"><i></i><span data-i18n="connecting">连接世界</span></div></div>
+   <div class="camera-bar" aria-label="View controls">
+    <span id="camera-status" role="status">自由观察</span>
+    <button id="follow-agent" disabled type="button">关注角色</button>
+    <button id="return-role" type="button" disabled>回到关注角色</button>
+    <button id="zoom-out" disabled type="button" aria-label="Zoom out">−</button>
+    <button id="zoom-in" disabled type="button" aria-label="Zoom in">+</button>
+    <button id="overview" disabled type="button" aria-label="Whole map">全图</button>
+   </div>
    <div class="canvas-wrap" id="canvas-wrap">
     <canvas id="world" width="640" height="416" tabindex="0" aria-label="Village map. Click a location to walk. WASD or arrow keys to move. E to interact. Escape to stop."></canvas>
     <div id="bubbles" class="bubbles" aria-live="polite"></div>
@@ -67,5 +75,5 @@
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js?v=0.2.5"></script>
+<script type="module" src="/static/app.js?v=0.3.0"></script>
 </body></html>

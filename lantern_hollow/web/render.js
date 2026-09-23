@@ -1,5 +1,6 @@
 // Original pixel-art renderer. World positions and actions always come from the server.
 import {ServerClock} from './presentation.js';
+import {SceneCamera} from './camera.js?v=0.3.0';
 const T=16;
 const C={grass:['#4d674c','#4f6a4f','#516d51','#536e51'],deep:'#233d3b',leaf:'#345547',light:'#8ca56c',water:'#294e58',ink:'#202c35',gold:'#e9b76a'};
 function rand(n){let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
@@ -41,9 +42,9 @@ export class VillageRenderer{
   this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;canvas.width=map.width*T;canvas.height=map.height*T;
   this.ctx.imageSmoothingEnabled=false;this.bg=document.createElement('canvas');this.bg.width=canvas.width;this.bg.height=canvas.height;
   this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
-  this.drawBase();
+  this.camera=new SceneCamera(canvas.width,canvas.height);this.drawBase();
  }
- update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);}
+ update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);if(!scene){this.camera.overview();this.focusRole=null;this.particles=[];}}
  now(){return this.clock.now();}
  getFrame(kind,dir,frame){const key=`${kind}:${dir}:${frame}`;if(!this.atlas.has(key))this.atlas.set(key,sprite(kind,dir,frame));return this.atlas.get(key);}
  actorPosition(a,now=this.now()){
@@ -53,7 +54,7 @@ export class VillageRenderer{
   const dx=j===i?p[0]-previous[0]:q[0]-p[0],dy=j===i?p[1]-previous[1]:q[1]-p[1];
   return {x:p[0]+(q[0]-p[0])*f,y:p[1]+(q[1]-p[1])*f,dir:dx>0?'right':dx<0?'left':dy>0?'down':dy<0?'up':a.facing||'down',moving:s<m.path.length-1};
  }
- project(x,y){return {x:(x*T+T/2)/this.canvas.width*100,y:((y+1)*T-30)/this.canvas.height*100};}
+ project(x,y){const p=this.camera.project(x*T+T/2,(y+1)*T-30);return {x:p.x/this.canvas.width*100,y:p.y/this.canvas.height*100};}
  event(e){
   if(e.kind!=='world.presentation')return;const p=e.payload;
   if(p.name==='collect'||p.name==='repair'&&p.phase==='finish'){
@@ -164,6 +165,9 @@ export class VillageRenderer{
  glow(c,x,y,r,alpha=.22){const grad=c.createRadialGradient(x,y,0,x,y,r);grad.addColorStop(0,`rgba(255,208,110,${alpha})`);grad.addColorStop(.3,`rgba(236,160,68,${alpha*.6})`);grad.addColorStop(1,'rgba(224,146,58,0)');c.fillStyle=grad;c.fillRect(x-r,y-r,r*2,r*2);}
  draw(nowMillis){
   const now=this.now(),c=this.ctx,dt=Math.min(.05,(nowMillis-this.last)/1000||.016);this.last=nowMillis;
+  const followed=this.scene?.entities?.[this.camera.followId];
+  if(followed){const p=this.actorPosition(followed,now);this.camera.track(p.x*T+8,p.y*T+2);}
+  c.save();c.setTransform(this.camera.zoom,0,0,this.camera.zoom,this.camera.tx,this.camera.ty);
   c.drawImage(this.bg,0,0);
   if(!this.reduced){for(let i=0;i<36;i++){let y=(i*31+now*7)%this.canvas.height,x=(y/16<16?29:y/16<21?28:27)*16+rand(i)*23;rect(c,x,y,4+rand(i)*7,1,'#6b9891');}}
   const self=this.scene?.meta.self;
@@ -206,6 +210,7 @@ export class VillageRenderer{
   // Foreground vignette and soft evening haze. Pixel textures remain nearest-neighbor.
   const g=c.createRadialGradient(320,210,110,320,200,390);g.addColorStop(0,'rgba(14,25,31,0)');g.addColorStop(1,'rgba(11,24,29,.35)');c.fillStyle=g;c.fillRect(0,0,640,416);
   if(this.target){const t=this.map.targets.find(a=>a.id===this.target);if(t){const yy=t.y*T-28+(this.reduced?0:Math.sin(now*4)*2);poly(c,[[t.x*T+4,yy],[t.x*T+12,yy],[t.x*T+8,yy+4]],'#ffe1a0');}}
+  c.restore();
  }
  portrait(canvas,kind){canvas.width=48;canvas.height=48;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;rect(c,0,0,48,48,'#304440');c.drawImage(this.getFrame(kind,'down',0),0,0,24,23,0,0,48,46);}
 }

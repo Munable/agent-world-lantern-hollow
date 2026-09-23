@@ -1,4 +1,5 @@
-import {VillageRenderer} from './render.js?v=0.2.5';
+import {VillageRenderer} from './render.js?v=0.3.0';
+import {bindCameraInput} from './camera.js?v=0.3.0';
 import {bubbleFromEvent,cueSource} from './presentation.js';
 import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.1';
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
@@ -15,15 +16,55 @@ function translate(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';$$('
 let renderer,map,view=null,roleId=null,eventCursor=0,working=false,polling=false,pollTimer=null,lastSuccess=0,selected=null,toastTimer,notedAt=0,dialogueStamp='',completionShown=false;
 let generation=0,canControl=false,appearance='traveler';
 let mode='spectate',streamCursor=null,historyCursor=null,historyAvailable=false,focusedRole=null,feedGap=false;
-const focusKey='lh.public-focus';
-try{const saved=localStorage.getItem(focusKey);if(/^awr_[A-Za-z0-9_-]{1,120}$/.test(saved||''))focusedRole=saved;}catch{}
-function focusPublicRole(id){
- focusedRole=id;renderer.focusRole=id||roleId;
- try{if(id)localStorage.setItem(focusKey,id);else localStorage.removeItem(focusKey);}catch{}
- updateLiveUI(true);
-}
 const ledger=new EventLedger(600),bubbleQueue=new BubbleQueue();
 let rosterSignature='',timelineSignature='',filterKind='all';
+const focusKey='lh.public-focus';
+const validRole=id=>typeof id==='string'&&/^awr_[A-Za-z0-9_-]{1,120}$/.test(id);
+let preferredRole=localStorage.getItem(focusKey)||null;
+if(!validRole(preferredRole))preferredRole=null;
+const linkedRole=new URLSearchParams(location.search).get('role');
+if(validRole(linkedRole)){
+ preferredRole=linkedRole;localStorage.setItem(focusKey,linkedRole);
+ const clean=new URL(location.href);clean.searchParams.delete('role');
+ history.replaceState(null,'',clean.pathname+clean.search+clean.hash);
+}
+focusedRole=preferredRole;
+function followHome(){
+ const id=mode==='play'?roleId:preferredRole;
+ renderer.camera.follow(id);renderer.focusRole=id;focusedRole=id;updateLiveUI(true);
+}
+function updateFocusStatus(){
+ if(!renderer)return;const id=mode==='play'?roleId:preferredRole;const a=view?.snapshot.entities?.[id];
+ const zh=lang==='zh',follow=!!id&&renderer.camera.followId===id;
+ text($('#return-role'),zh?'回到关注角色':'Return to role');$('#return-role').disabled=!id;
+ $('#return-role').setAttribute('aria-pressed',String(follow));
+ text($('#follow-agent'),zh?'关注角色':'Watch a role');text($('#overview'),zh?'全图':'Overview');
+ text($('#camera-status'),id?(a?(zh?(follow?'跟随：':'自由镜头 · '):(follow?'Following: ':'Free camera · '))+a.name:(zh?'关注角色尚未入场':'Watched role has not entered')):(zh?'自由观察':'Free observation'));
+ if(mode==='spectate'){
+  text($('#traveler-name'),a?.name||(id?(zh?'等待关注角色入场':'Waiting for watched role'):(zh?'公开观察':'Public observation')));
+  text($('#activity-label'),a?(zh?'只读关注 · ':'Read-only · ')+(a.movement?(zh?'行走中':'Walking'):a.busy?(zh?'活动中':'Working'):(zh?'空闲':'Idle')):(zh?'仅公开数据，不授予控制权':'Public data only; no control granted'));
+  renderer.portrait($('#portrait'),a?.appearance||'traveler');
+ }
+}
+function rememberRole(id){if(!validRole(id))return false;preferredRole=id;localStorage.setItem(focusKey,id);return true;}
+function watchRoleDialog(){
+ modal(lang==='zh'?'关注已有角色':'Watch an existing role');
+ paragraph(lang==='zh'?'只需要公开角色 ID，不要填写身份令牌。关注不会取得控制权或私人任务。':'Use a public role ID, never an identity token. Watching grants no control or private data.');
+ const input=document.createElement('input');input.id='watch-role-id';input.maxLength=128;input.autocomplete='off';input.value=preferredRole||'';input.setAttribute('aria-label','Public role ID');
+ const go=document.createElement('button');go.className='gold';go.id='watch-role-confirm';go.textContent=lang==='zh'?'记住并关注':'Remember and watch';
+ const error=document.createElement('p');error.className='error';
+ go.onclick=()=>{if(!rememberRole(input.value.trim())){error.textContent=lang==='zh'?'请输入公开角色 ID，而不是令牌。':'Enter a public role ID, not a token.';return;}$('#modal').close();openWatch().catch(e=>toast(e.message));};
+ const clear=document.createElement('button');clear.id='watch-role-forget';clear.className='text-button';clear.textContent=lang==='zh'?'取消记住此角色':'Forget watched role';clear.onclick=()=>{focusPublicRole(null);renderer.camera.overview();$('#modal').close();updateLiveUI(true);};
+ $('#modal-body').append(input,go,clear,error);input.focus();
+}
+
+
+function selectRole(id){focusedRole=id;renderer.focusRole=id||roleId;renderer.camera.follow(id||roleId);updateLiveUI(true);}
+function focusPublicRole(id){
+ if(id){if(!rememberRole(id))return;}else{preferredRole=null;localStorage.removeItem(focusKey);}
+ selectRole(id);
+}
+
 const pendingKey='lh.pending';
 function clearSession(){++generation;ledger.clear();bubbleQueue.clear();streamCursor=null;historyCursor=null;$('#timeline').replaceChildren();$('#travelers').replaceChildren();$('#public-notes').replaceChildren();delete $('#public-notes').dataset.signature;text($('#traveler-count'),'0');rosterSignature=timelineSignature='';clearTimeout(pollTimer);roleId=null;view=null;canControl=false;selected=null;held.clear();renderer?.update(null,null);$('#bubbles').replaceChildren();dialogueStamp='';$('#welcome').hidden=false;$('#completion').hidden=true;completionShown=false;$$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);updateUI(true);}
 function toast(message){text($('#toast'),message);$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4200);}
@@ -72,7 +113,7 @@ async function openSession(){
  setMode('play');roleId=result.role_id;canControl=result.access_mode!=='observe';eventCursor=result.event_cursor;
  apply(result.view);absorbFeed(result,true);$('#welcome').hidden=true;
  $$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=!canControl);
- if(canControl)await recoverPending();else text($('#activity-label'),tr('observer'));schedulePoll(150);
+ followHome();if(canControl)await recoverPending();else text($('#activity-label'),tr('observer'));schedulePoll(150);
 }
 async function openWatch(){
  const g=++generation;clearTimeout(pollTimer);
@@ -80,14 +121,14 @@ async function openWatch(){
  ledger.clear();bubbleQueue.clear();historyCursor=null;feedGap=false;
  setMode('spectate');roleId=null;canControl=false;
  apply(result.view);absorbFeed(result,true);$('#welcome').hidden=true;$('#completion').hidden=true;
- $$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);schedulePoll(150);
+ $$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);followHome();schedulePoll(150);
 }
 function schedulePoll(ms=650){clearTimeout(pollTimer);pollTimer=setTimeout(poll,ms);}
 async function poll(){
- if(!view)return;if(polling){schedulePoll(100);return;}polling=true;const g=generation;
+ if(!view)return;if(document.hidden){schedulePoll(10000);return;}if(polling){schedulePoll(100);return;}polling=true;const g=generation;
  try{
   const r=await request(mode==='spectate'?'/watch/sync':'/play/sync',{method:'POST',data:{cursor:view.cursor,stream_cursor:streamCursor}});
-  if(g!==generation)return;apply(r.view);absorbFeed(r);schedulePoll(r.has_more?80:document.hidden?1800:500);
+  if(g!==generation)return;apply(r.view);absorbFeed(r);schedulePoll(r.has_more?80:Object.values(view.snapshot.entities).some(a=>a.movement||a.busy)?500:1500);
  }catch(err){
   if(g!==generation)return;connected(false);updateLiveUI();
   if(err.status===401||err.status===403){clearSession();toast(tr('loggedOut'));}
@@ -153,7 +194,7 @@ function describeEvent(event){
  return who+' · '+(names[p.name]?.[lang==='zh'?0:1]||p.name||event.kind)+' · '+(phases[p.phase]?.[lang==='zh'?0:1]||p.phase||'');
 }
 function updateLiveUI(force=false){
- if(!renderer||!view)return;
+ if(!renderer||!view)return;updateFocusStatus();
  const zh=lang==='zh',actors=Object.values(view.snapshot.entities).filter(a=>a.kind==='traveler');
  const watched=actors.find(a=>a.role_id===focusedRole);
  text($('#focus-status'),focusedRole?(zh?'公开关注：':'Public focus: ')+(watched?.name||(zh?'角色尚未公开入场':'role not present'))+(zh?' · 不改变控制身份':' · does not change control identity'):(zh?'可选择公开关注的角色':'Select a public role to focus'));
@@ -185,7 +226,7 @@ function updateLiveUI(force=false){
    const name=document.createElement('strong'),state=document.createElement('span'),detail=document.createElement('small');
    name.textContent=a.name;state.className='state';state.textContent=a.movement?(zh?'行走中':'Walking'):a.busy?(zh?'修灯中':'Repairing'):(zh?'无进行中的动作':'No active action');
    detail.textContent=(a.last_action?.source?(zh?'最近保留记录 ':'Last retained record '):(zh?'最后世界动作 ':'Last world action '))+localClock(a.last_action?.at)+' · ['+a.position.join(', ')+']';
-   row.append(name,state,detail);row.onclick=()=>focusPublicRole(a.role_id);
+   row.append(name,state,detail);row.onclick=()=>selectRole(a.role_id);
    row.ondblclick=()=>showTraveler(a.role_id);$('#travelers').append(row);
   }
  }
@@ -213,7 +254,7 @@ function updateLiveUI(force=false){
 }
 function showTraveler(id){
  const a=view?.snapshot.entities[id];if(!a)return;
- focusPublicRole(id);modal(a.name);
+ selectRole(id);modal(a.name);
  paragraph(lang==='zh'?'这是已入场的旅人。没有后续动作不代表模型正在思考或离线。':'An entered traveler. No active action does not establish the model’s status.');
  if(canControl&&id!==roleId){
   const walk=document.createElement('button');walk.className='gold';walk.textContent=lang==='zh'?'走到旁边':'Approach';walk.onclick=()=>{$('#modal').close();act('town.approach',{role_id:id});};
@@ -222,6 +263,8 @@ function showTraveler(id){
  }
 }
 $('#focus-clear').onclick=()=>focusPublicRole(null);
+$('#return-role').onclick=followHome;$('#follow-agent').onclick=watchRoleDialog;
+$('#zoom-in').onclick=()=>{renderer.camera.scale(1.25);updateFocusStatus();};$('#zoom-out').onclick=()=>{renderer.camera.scale(.8);updateFocusStatus();};$('#overview').onclick=()=>{renderer.camera.overview();updateFocusStatus();};
 $('#event-filter').onchange=e=>{filterKind=e.target.value;updateLiveUI(true);};
 $('#load-history').onclick=async()=>{
  if(!historyCursor)return;const g=generation;const button=$('#load-history');button.disabled=true;
@@ -259,8 +302,8 @@ function renderBubbles(){
  for(const el of $$('#bubbles .bubble')){
   const msg=el.querySelector('.typed'),chars=[...msg.dataset.full],count=renderer.reduced?chars.length:Math.max(1,Math.floor((now-Number(msg.dataset.started))*55));
   const visible=chars.slice(0,count).join('');if(msg.textContent!==visible)msg.textContent=visible;
-  const actor=view.snapshot.entities[el.dataset.subject],npc=map.targets.find(t=>t.id===el.dataset.subject),pos=actor?renderer.actorPosition(actor):npc;el.hidden=!pos;if(!pos)continue;
-  const anchor=renderer.project(pos.x,pos.y),width=el.offsetWidth,height=el.offsetHeight;
+  const actor=view.snapshot.entities[el.dataset.subject],npc=map.targets.find(t=>t.id===el.dataset.subject),pos=actor?renderer.actorPosition(actor):npc;el.hidden=!pos;if(!pos){el.hidden=true;continue;}
+  const anchor=renderer.project(pos.x,pos.y);el.hidden=anchor.x<0||anchor.x>100||anchor.y<0||anchor.y>100;if(el.hidden)continue;const width=el.offsetWidth,height=el.offsetHeight;
   const x=Math.max(5,Math.min(rect.width-width-5,anchor.x/100*rect.width-width/2));
   let y=Math.max(5,anchor.y/100*rect.height-height);
   for(const previous of occupied){if(x<previous.x+previous.w+5&&x+width>previous.x-5&&y<previous.y+previous.h+5&&y+height>previous.y-5){
@@ -388,16 +431,17 @@ function tone(freq,duration,volume=.025,delay=0){if(!audioCtx||!audioOn)return;c
 function sound(kind){if(!audioOn)return;const notes=kind==='finish'?[261.63,329.63,392,523.25]:kind==='collect'?[440,659.25]:[261.63,392];notes.forEach((n,i)=>tone(n,.65,.04,i*.1));}
 $('#audio').onclick=()=>{audioOn=!audioOn;$('#audio').setAttribute('aria-pressed',String(audioOn));if(audioOn){audioCtx??=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();sound('join');ambientTimer=setInterval(()=>{if(document.hidden)return;[130.81,196,246.94].forEach((n,i)=>tone(n,3.5,.01,i*.35));},5000);}else clearInterval(ambientTimer);};
 let blocked=new Set();
-function hit(e){const r=$('#world').getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*map.width,y:(e.clientY-r.top)/r.height*map.height};}
+function hit(e){const r=$('#world').getBoundingClientRect(),p=renderer.camera.unproject((e.clientX-r.left)/r.width*renderer.canvas.width,(e.clientY-r.top)/r.height*renderer.canvas.height);return {x:p.x/16,y:p.y/16};}
 function hitTarget(pos){return map.targets.find(t=>Math.abs(pos.x-(t.x+.5))<.9&&pos.y>t.y-.9&&pos.y<t.y+1.2)||(pos.x>=32&&pos.x<=36&&pos.y>=2&&pos.y<=10?map.targets.find(t=>t.id==='beacon'):null);}
 async function boot(){
- translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
- $('#world').addEventListener('pointermove',e=>{const p=hit(e),target=hitTarget(p);renderer.hover=[Math.floor(p.x),Math.floor(p.y)];renderer.target=target?.id||selected;$('#world').style.cursor=target?'pointer':blocked.has(renderer.hover.join(','))?'not-allowed':'crosshair';const label=$('#hover-label');label.hidden=!target;if(target){text(label,targetName(target));const wrap=$('#canvas-wrap').getBoundingClientRect(),r=$('#world').getBoundingClientRect();label.style.left=((target.x+.5)/map.width*100)+'%';label.style.top=((r.top-wrap.top+(target.y-.9)/map.height*r.height)/wrap.height*100)+'%';}});
+ translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
+ $('#world').addEventListener('pointermove',e=>{const p=hit(e),target=hitTarget(p);renderer.hover=[Math.floor(p.x),Math.floor(p.y)];renderer.target=target?.id||selected;$('#world').style.cursor=target?'pointer':blocked.has(renderer.hover.join(','))?'not-allowed':'crosshair';const label=$('#hover-label');label.hidden=!target;if(target){text(label,targetName(target));const wrap=$('#canvas-wrap').getBoundingClientRect(),r=$('#world').getBoundingClientRect();const anchor=renderer.project(target.x,target.y);label.style.left=((r.left-wrap.left+anchor.x/100*r.width)/wrap.width*100)+'%';label.style.top=((r.top-wrap.top+anchor.y/100*r.height)/wrap.height*100)+'%';}});
  $('#world').addEventListener('pointerleave',()=>{renderer.hover=null;renderer.target=selected;$('#hover-label').hidden=true;});
  $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=Object.values(view?.snapshot.entities||{}).find(a=>a.kind==='traveler'&&Math.abs(renderer.actorPosition(a).x+.5-p.x)<.8&&Math.abs(renderer.actorPosition(a).y+.5-p.y)<1);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});
- try{if(location.pathname==='/watch')await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);toast(e.message);}}
+ try{if(location.pathname==='/watch'||preferredRole)await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);toast(e.message);}}
+ $$('#join-mode,#follow-agent,#zoom-out,#zoom-in,#overview').forEach(el=>el.disabled=false);
  }catch(e){text($('#join-error'),e.message);$('#join-error').hidden=false;connected(false);}
 }
-window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)||$('#modal').open)return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){e.preventDefault();held.add(k);}if(k==='Escape'){selected=null;if(renderer)renderer.target=null;if(!$('#completion').hidden){$('#completion').hidden=true;$('#world').focus();return;}if(roleId)act('town.stop');}if(k==='e'&&!e.repeat&&view){const p=renderer.actorPosition(view.snapshot.meta.self);const nearest=[...map.targets].sort((a,b)=>distance([p.x,p.y],a.approach)-distance([p.x,p.y],b.approach))[0];goTo(nearest.id);}});
+window.addEventListener('keydown',e=>{if(!canControl||!view?.snapshot.meta.self||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName)||$('#modal').open)return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){e.preventDefault();held.add(k);}if(k==='Escape'){selected=null;if(renderer)renderer.target=null;if(!$('#completion').hidden){$('#completion').hidden=true;$('#world').focus();return;}if(roleId)act('town.stop');}if(k==='e'&&!e.repeat&&view){const p=renderer.actorPosition(view.snapshot.meta.self);const nearest=[...map.targets].sort((a,b)=>distance([p.x,p.y],a.approach)-distance([p.x,p.y],b.approach))[0];goTo(nearest.id);}});
 window.addEventListener('keyup',e=>held.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>held.clear());window.addEventListener('online',()=>{if(view)schedulePoll(1);});document.addEventListener('visibilitychange',()=>{held.clear();if(!document.hidden&&view)schedulePoll(1);});
 boot();
