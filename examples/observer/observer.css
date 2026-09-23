@@ -1,0 +1,4 @@
+body{font:16px/1.5 system-ui,sans-serif;max-width:1000px;margin:auto;padding:20px;background:#f3f5f5;color:#213634}
+input{width:min(65vw,480px);padding:8px}button{padding:8px}svg{width:100%;background:#dce7dc;border:1px solid #879e93}
+#roles{display:flex;flex-wrap:wrap;gap:10px}.role{border:1px solid #a0b0a7;padding:12px;flex:1;min-width:220px}text{font:0.55px system-ui,sans-serif}
+#events{max-height:260px;overflow:auto}#health[data-state="error"]{color:#9b2929}

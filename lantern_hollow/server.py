@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.applications import Starlette
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from agent_world.http_app import create_app as create_world_http
 from agent_world.mcp_app import create_mcp_app, BearerIdentityMiddleware
@@ -34,14 +35,16 @@ from .map import manifest
 
 COOKIE="lantern_identity"
 WEB=Path(__file__).parent/"web"
-CORE_PIN="60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97"
+CORE_PIN="422fc56fd63d383fb4dd262981810d88e5db0c73"
 
 
-def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow", agent_public_url=None):
+def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow", agent_public_url=None, observer_origins=()):
     public_url=checked_origin(public_url)
     parsed=urlsplit(public_url)
     agent_origin=checked_origin(agent_public_url or public_url)
     agent_host=urlsplit(agent_origin).hostname
+    observer_origins=tuple(checked_origin(origin) for origin in observer_origins)
+    public_reads={"/play/map","/watch/session","/watch/sync","/watch/history"}
     installer=lambda runtime,u:install_world(runtime,u,WORLD)
     mcp,_,runtime=create_mcp_app(db_path,universe,auth_required=True,installer=installer,host=agent_host)
     api=create_world_http(db_path,universe,auth_required=True,installer=installer)
@@ -67,7 +70,8 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     @ui.middleware("http")
     async def safety(request,call_next):
         if request.method not in ("GET","HEAD","OPTIONS"):
-            if request.headers.get("origin") not in (None,public_url) or request.headers.get("x-lantern-client")!="1":
+            allowed=(None,public_url)+observer_origins if request.url.path in public_reads else (None,public_url)
+            if request.headers.get("origin") not in allowed or request.headers.get("x-lantern-client")!="1":
                 return JSONResponse({"error":"ForbiddenOrigin","message":"Same-origin game request required"},status_code=403)
         response=await call_next(request)
         response.headers["Cache-Control"]="no-store" if not request.url.path.startswith("/static/") else "no-cache, max-age=0"
@@ -144,7 +148,8 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
 
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":__version__}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":__version__,"world_id":WORLD.world_id,
+                               "universe":universe,"world_version":WORLD.version,"presentation_version":1}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -285,10 +290,14 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             return await asyncio.to_thread(do_exchange)
         except Exception as exc:return failure(exc)
 
+    # Cross-origin support is opt-in and only wraps anonymous observation routes.
+    public_ui=CORSMiddleware(ui,allow_origins=list(observer_origins),allow_methods=["GET","POST"],
+                            allow_headers=["Content-Type","X-Lantern-Client"],allow_credentials=False)
+
     class Dispatch:
         async def __call__(self,scope,receive,send):
             path=scope.get("path","")
-            target=mcp if path=="/mcp" or path.startswith("/mcp/") else ui if path=="/" or path.startswith(("/static/","/play/","/watch","/bridge/")) else api
+            target=public_ui if path in public_reads else mcp if path=="/mcp" or path.startswith("/mcp/") else ui if path=="/" or path.startswith(("/static/","/play/","/watch","/bridge/")) else api
             await target(scope,receive,send)
 
     base=mcp.app if isinstance(mcp,BearerIdentityMiddleware) else mcp
@@ -313,8 +322,9 @@ def main():
     parser.add_argument("--host",default="127.0.0.1")
     parser.add_argument("--public-url")
     parser.add_argument("--agent-public-url",help="Trusted externally reachable origin for Agent invitations; does not change browser Origin policy")
+    parser.add_argument("--observer-origin",action="append",default=[],help="Allow this exact origin to read public observation; repeatable; never grants control")
     args=parser.parse_args()
     import uvicorn
-    uvicorn.run(create_app(args.db,public_url=args.public_url or f"http://127.0.0.1:{args.port}",agent_public_url=args.agent_public_url),host=args.host,port=args.port,log_level="warning")
+    uvicorn.run(create_app(args.db,public_url=args.public_url or f"http://127.0.0.1:{args.port}",agent_public_url=args.agent_public_url,observer_origins=args.observer_origin),host=args.host,port=args.port,log_level="warning")
 
 if __name__=="__main__":main()

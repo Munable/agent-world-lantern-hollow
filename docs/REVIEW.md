@@ -1,3 +1,5 @@
+> Historical identity audit of 0.2.4. Its results and branch status describe that review, not the later 0.2.5 integration. For subsequent presentation changes see [acceptance](PRESENTATION_ACCEPTANCE.md).
+
 # Implementation and contract review
 
 Date: 2026-09-23. Baseline: `9a7285c` (0.2.3, guide v4). Reviewed candidate: 0.2.4, guide v5.

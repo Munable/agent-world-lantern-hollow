@@ -146,9 +146,8 @@ class RendererContractTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[1] / "lantern_hollow" / "web" / "render.js"
         code = r"""
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-const source=readFileSync(process.argv[2],'utf8');
-const {VillageRenderer}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+import {pathToFileURL} from 'node:url';
+const {VillageRenderer}=await import(pathToFileURL(process.argv[2]).href);
 const renderer=Object.create(VillageRenderer.prototype);
 const actor={position:[1,1],facing:'down',movement:{path:[[1,1],[1,2],[2,2]],start_at:100,step_seconds:1}};
 assert.deepEqual(renderer.actorPosition(actor,99),{x:1,y:1,dir:'down',moving:true});

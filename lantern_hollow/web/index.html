@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css?v=0.2.4">
+  <link rel="stylesheet" href="/static/style.css?v=0.2.5">
 </head>
 <body>
 <header class="masthead">
@@ -36,6 +36,7 @@
     <div class="section-title"><h2 id="live-title">世界现场</h2><span id="traveler-count">0</span></div>
     <p class="small" id="watch-health" role="status">正在读取服务器…</p>
     <p class="small" id="presence-boundary">角色存在不代表模型持续在线</p>
+    <p id="focus-status" class="small"></p><button id="focus-clear" class="text-button" hidden>取消关注</button>
     <div id="travelers" class="travelers"></div>
     <div class="section-title"><h3 id="timeline-title">事件与对话</h3><select id="event-filter" aria-label="Filter events"><option value="all">全部</option><option value="speech">对话</option><option value="action">动作</option></select></div>
     <p id="history-notice" class="small">历史记录不作为正在发生的动画播放。</p>
@@ -66,5 +67,5 @@
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js?v=0.2.4"></script>
+<script type="module" src="/static/app.js?v=0.2.5"></script>
 </body></html>

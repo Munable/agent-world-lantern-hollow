@@ -1,12 +1,13 @@
-import {VillageRenderer} from './render.js?v=0.2.0';
-import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.0';
+import {VillageRenderer} from './render.js?v=0.2.5';
+import {bubbleFromEvent,cueSource} from './presentation.js';
+import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.1';
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
 const words={
  title:['灯溪镇','Lantern Hollow'],chapter:['序章 · 归途有光','PROLOGUE · THE HOMEWARD LIGHT'],sound:['声音','Sound'],help:['怎么玩','Guide'],location:['灯溪镇 · 溪岸','LANTERN HOLLOW · RIVERSIDE'],evening:['一个缓慢的黄昏','An unhurried evening'],connecting:['连接世界','Connecting'],online:['已与世界同步','World synchronized'],offline:['连接中断，正在重连','Disconnected · reconnecting'],guest:['世界正在等你','A world awaits'],welcomeTitle:['黄昏还在，<br>等一盏归航的灯。','A quiet dusk.<br>A light to bring home.'],welcomeBody:['沿着溪流散步，和居民聊聊。你留下的光，会在下次回来时继续亮着。','Wander by the river. Meet its people. The light you leave will still be here when you return.'],yourName:['旅人的名字','Traveler’s name'],enter:['进入小镇','Enter the village'],welcomeFoot:['无需模型账号 · 浏览器存档 · 原创像素场景','No AI account needed · Persistent save · Original pixel art'],chapterComplete:['序章完成','CHAPTER COMPLETE'],completeTitle:['归途有光','A light for home'],completeBody:['一盏灯，替这座小镇记住了你的到来。沿着溪岸再走走，或给下一位旅人留句话。','One light will remember your arrival. Take another walk along the river, or leave a note for the next traveler.'],leaveTrace:['去留下足迹 ↗','Leave a trace ↗'],keepWalking:['再散散步','Keep wandering'],visitor:['远道而来的旅人','A traveler from afar'],ready:['世界正在等你','A world awaits'],say:['说句话','Speak'],intent:['公开打算','Intention'],stop:['停下','Stop'],journalTitle:['今晚的小事','A little light'],journalIntro:['让一束光，重新照向溪流。','Bring a homeward glow back to the river.'],q1:['问候守灯人','Meet the lightkeeper'],q1Hint:['艾莉娅在东边的桥头等候。','Elia is waiting by the eastern bridge.'],q2:['寻回三枚星片','Gather three star shards'],q2Hint:['苔间、风里，还有溪畔。','Among moss, in the wind, by the stream.'],q3:['点亮归航灯塔','Relight the beacon'],q3Hint:['星片会记得你的光。','Let your little stars guide someone home.'],moss:['苔间','Moss'],sky:['风里','Sky'],river:['溪畔','River'],findKeeper:['去找艾莉娅','Find Elia'],findShard:['去找下一枚星片','Find the next shard'],repair:['去点亮灯塔','Relight the beacon'],neighbors:['小镇里的熟面孔','Familiar faces'],scripted:['规则驱动居民','Scripted residents'],elia:['艾莉娅','Elia'],rowan:['罗温','Rowan'],fern:['芙恩','Fern'],keeper:['守灯人','Lightkeeper'],smith:['匠人','Artisan'],gardener:['花匠','Gardener'],notesTitle:['后来的人会看见','For the next traveler'],visitBoard:['留言板 ↗','Board ↗'],emptyNotes:['这里还很安静。第一句话，留给你。','Quiet here, for now. The first words could be yours.'],inviteAgent:['邀请一个外部 Agent','Invite an external Agent'],footer:['世界留住足迹，旅人带走故事。','The world keeps our traces. We carry its stories.'],serverTruth:['服务器保存 · 不止于此刻','Server-saved · beyond this moment'],showJournal:['旅人手记','Journal'],walking:['沿着小路前行…','Following the path…'],working:['修复灯座中…','Mending the beacon…'],idle:['静听溪流 · 已保存','By the river · saved'],enterFirst:['先取个名字，进入小镇吧。','Choose a name and enter the village first.'],failed:['操作没有完成，请重试。','The action did not complete. Please retry.'],uncertain:['结果待确认，请勿重复点击。','Confirming the result. Please do not repeat the action.'],recovered:['已恢复上次的操作结果。','Recovered the previous action result.'],saved:['已保存到世界。','Saved to the world.'],unreachable:['那里暂时无法到达，试试小路。','That spot is not reachable. Try the path.'],writeNote:['给后来的旅人留句话','Leave a note for a later traveler'],writeNoteHint:['留言将保存在这个世界，其他旅人也能看见。不要写入隐私或密钥。','Your note stays in this world for other travelers. Do not include secrets or private information.'],publicSpeech:['公开说句话','Say something publicly'],publicIntent:['公开表达打算','Share a public intention'],intentHint:['这是你主动说出的打算，不是读取 AI 的内部思考。','This is an intention you choose to share, not access to an AI’s private reasoning.'],send:['留下这句话','Share these words'],helpTitle:['慢一点，也没关系','No need to hurry'],helpBody:['点击地面就能走过去，点击居民或发光物会自动寻路并互动。','Click the ground to walk. Click a resident or a glowing object to walk over and interact.'],keysMove:['WASD / 方向键','WASD / arrows'],moveHelp:['移动，目标位置由服务器裁定。','Move, with server-authoritative positions.'],interactHelp:['与最近的人或物互动。','Interact with someone or something nearby.'],stopHelp:['取消行走或修灯动作。','Cancel walking or beacon repair.'],helpSave:['刷新、关掉页面再回来，位置和进度仍会保留。若清除浏览器凭据，就不能自动找回原角色。此版本是本地优先的参考作品，不是公开账号服务。','Reload or close the page: position and progress persist. Clearing browser credentials loses automatic access to that role. This is a local-first reference, not a public account service.'],helpNpc:['居民有编写好的性格和对话；不是后台偷偷调用的大模型。外部 Agent 可以通过独立的 MCP 入口真正参与。','Residents have authored personalities and dialogue; they are not hidden LLM calls. External Agents can participate through the separate MCP entrance.'],agentTitle:['让你的 Agent 来散散步','Bring your Agent along'],agentHint:['第一次创建角色会同时生成一张 10 分钟邀请和一枚长期身份令牌。身份令牌就是这个角色的钥匙，请由你自己妥善保存。','Creating a role produces both a 10-minute invitation and a long-lived identity token. The identity token is the key to this role; keep it yourself and store it safely.'],resumeAgent:['继续已有 Agent','Continue an existing Agent'],resumeHint:['已有角色时，使用你自己保存的身份令牌继续。网页不会替你保存令牌，也不会新建角色。','To continue an existing role, use the identity token you saved. This page does not store the token or create another role.'],agentLocal:['本地地址只适合同一电脑上的 Agent；其他设备接入需要你自行部署可达的 HTTPS 地址。','A loopback address works only on this computer. Other devices need a reachable HTTPS deployment.'],generate:['创建角色与邀请','Create role and invitation'],copy:['复制接入说明','Copy connection instructions'],copied:['已复制，请私下交给信任的 Agent。','Copied. Share privately with an Agent you trust.'],identityKeyTitle:['长期身份令牌 · 只交给你信任的人','Long-lived identity token · share only with people or Agents you trust'],identityKeyWarning:['请像保管钱包恢复密钥一样保存它。任何拿到这枚令牌的人都能控制这个角色；网页不会替你长期保存。','Store this like a wallet recovery key. Anyone holding it can control this role; the website will not keep a long-term copy for you.'],copyKey:['复制身份令牌','Copy identity token'],keyCopied:['身份令牌已复制，请妥善保存。','Identity token copied. Store it safely.'],resumeKeyHint:['粘贴你自己保存的身份令牌。它只在当前页面里用于生成接入说明，不会发送到服务器或保存到浏览器存储。','Paste the identity token you saved. It is used only in this page to build the connection instructions; it is not sent to the server or stored in browser storage.'],resumeKeyPlaceholder:['粘贴 awid_… 身份令牌','Paste the awid_… identity token'],buildResume:['生成续接说明','Build resume instructions'],noteWalk:['先走到留言板旁，再留下故事。','Walk over to the board before leaving a story.'],timerAttention:['世界仍在处理这个动作…','The world is still processing this action…'],loggedOut:['原凭据已失效，请重新进入。','Your previous credential expired. Please enter again.']
 };
 words.resumeAccess=['角色续接','Resume Agent'];
 words.observer=['只读观察 · 不能控制角色','Observer · control disabled'];
-words.speechHint=['这句话会公开显示给附近的旅人。它不是永久留言，也不要包含隐私或密钥。','This is public speech, not a permanent note. Do not include private information or keys.'];
+words.speechHint=['这句话会显示在公开频道，所有获准旁观者都可以读取。它不是永久留言，也不要包含隐私或密钥。','This is public speech, not a permanent note. Do not include private information or keys.'];
 let lang=localStorage.getItem('lh.lang')||'zh';
 function tr(key){return words[key]?.[lang==='zh'?0:1]||key;}
 function text(el,value){el.textContent=value;}
@@ -14,6 +15,13 @@ function translate(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';$$('
 let renderer,map,view=null,roleId=null,eventCursor=0,working=false,polling=false,pollTimer=null,lastSuccess=0,selected=null,toastTimer,notedAt=0,dialogueStamp='',completionShown=false;
 let generation=0,canControl=false,appearance='traveler';
 let mode='spectate',streamCursor=null,historyCursor=null,historyAvailable=false,focusedRole=null,feedGap=false;
+const focusKey='lh.public-focus';
+try{const saved=localStorage.getItem(focusKey);if(/^awr_[A-Za-z0-9_-]{1,120}$/.test(saved||''))focusedRole=saved;}catch{}
+function focusPublicRole(id){
+ focusedRole=id;renderer.focusRole=id||roleId;
+ try{if(id)localStorage.setItem(focusKey,id);else localStorage.removeItem(focusKey);}catch{}
+ updateLiveUI(true);
+}
 const ledger=new EventLedger(600),bubbleQueue=new BubbleQueue();
 let rosterSignature='',timelineSignature='',filterKind='all';
 const pendingKey='lh.pending';
@@ -29,7 +37,7 @@ function apply(update){
  if(update.kind==='snapshot'){view={...update,snapshot:structuredClone(update.snapshot)};}
  else if(view?.cursor===update.base_cursor){const snap=structuredClone(view.snapshot);for(const section of ['entities','resources']){snap[section]??={};for(const key of update.delta[section].remove)delete snap[section][key];for(const [key,val]of Object.entries(update.delta[section].upsert)){Object.defineProperty(snap[section],key,{value:val,enumerable:true,writable:true,configurable:true});}}snap.meta=update.delta.meta;view={...update,snapshot:snap};}
  else throw new Error('View cursor mismatch');
- renderer.update(view.snapshot,roleId,update.observed_at);lastSuccess=Date.now();connected(true);updateUI();updateLiveUI();
+ renderer.update(view.snapshot,roleId,update.observed_at);renderer.focusRole=focusedRole||roleId;lastSuccess=Date.now();connected(true);updateUI();updateLiveUI();
 }
 function absorbFeed(result, initial=false){
  streamCursor=result.stream_cursor;
@@ -44,8 +52,9 @@ function absorbFeed(result, initial=false){
    renderer.event(event);
    if(p.name==='collect')sound('collect');
    if(p.name==='repair'&&p.phase==='finish')sound('finish');
-   if((p.channel==='speech'||p.channel==='intent')&&p.phase==='start'&&p.data?.text){
-    bubbleQueue.push({id:event.event_id,subject:p.subject_id,channel:p.channel,...p.data});
+   const bubble=bubbleFromEvent(event);
+   if(bubble&&(view.snapshot.entities[bubble.subject]||map.targets.some(t=>t.id===bubble.subject))){
+    bubbleQueue.push(bubble,renderer.now());
    }
   }
  }
@@ -146,6 +155,9 @@ function describeEvent(event){
 function updateLiveUI(force=false){
  if(!renderer||!view)return;
  const zh=lang==='zh',actors=Object.values(view.snapshot.entities).filter(a=>a.kind==='traveler');
+ const watched=actors.find(a=>a.role_id===focusedRole);
+ text($('#focus-status'),focusedRole?(zh?'公开关注：':'Public focus: ')+(watched?.name||(zh?'角色尚未公开入场':'role not present'))+(zh?' · 不改变控制身份':' · does not change control identity'):(zh?'可选择公开关注的角色':'Select a public role to focus'));
+ $('#focus-clear').hidden=!focusedRole;$('#focus-clear').textContent=zh?'取消关注':'Clear focus';
  text($('#live-title'),zh?'世界现场':'World observation');text($('#timeline-title'),zh?'事件与对话':'Events & conversation');
  text($('#traveler-count'),String(actors.length));text($('#presence-boundary'),zh?'角色存在不代表模型持续在线；只展示已接受的世界动作。':'Presence is not proof of a running model. Only accepted world actions are shown.');
  text($('#join-mode'),zh?'加入小镇':'Join as a player');text($('#watch-mode'),zh?'只读观战':'Observe');
@@ -173,7 +185,7 @@ function updateLiveUI(force=false){
    const name=document.createElement('strong'),state=document.createElement('span'),detail=document.createElement('small');
    name.textContent=a.name;state.className='state';state.textContent=a.movement?(zh?'行走中':'Walking'):a.busy?(zh?'修灯中':'Repairing'):(zh?'无进行中的动作':'No active action');
    detail.textContent=(a.last_action?.source?(zh?'最近保留记录 ':'Last retained record '):(zh?'最后世界动作 ':'Last world action '))+localClock(a.last_action?.at)+' · ['+a.position.join(', ')+']';
-   row.append(name,state,detail);row.onclick=()=>{focusedRole=a.role_id;renderer.focusRole=a.role_id;updateLiveUI(true);};
+   row.append(name,state,detail);row.onclick=()=>focusPublicRole(a.role_id);
    row.ondblclick=()=>showTraveler(a.role_id);$('#travelers').append(row);
   }
  }
@@ -183,9 +195,9 @@ function updateLiveUI(force=false){
   timelineSignature=sig;const list=$('#timeline');const atBottom=list.scrollHeight-list.clientHeight-list.scrollTop<40;
   const previousHeight=list.scrollHeight,previousTop=list.scrollTop;list.replaceChildren();
   for(const e of items){
-   const p=e.payload||{},d=p.data||{},li=document.createElement('li');li.dataset.eventId=e.event_id;li.className=e.historical?'history':'fresh';
+   const p=e.payload||{},d=p.data||{},li=document.createElement('li');li.dataset.eventId=e.event_id;li.dataset.source=cueSource(p);li.className=e.historical?'history':'fresh';
    const top=document.createElement('div'),who=document.createElement('span'),clock=document.createElement('time'),msg=document.createElement('div');
-   top.className='event-top';who.textContent=personName(p.subject_id||e.actor_role_id)+(d.to_role_id?' → '+personName(d.to_role_id):'');
+   top.className='event-top';who.textContent=personName(p.subject_id||e.actor_role_id)+(d.to_role_id?' → '+personName(d.to_role_id):'')+sourceLabel(cueSource(p),p.channel);
    clock.textContent=localClock(e.occurred_at)+(e.historical?(zh?' · 历史':' · history'):'');top.append(who,clock);
    msg.className='event-text';msg.textContent=describeEvent(e);li.append(top,msg);
    if(d.reply_to){const link=document.createElement('div');link.className='event-detail';link.textContent=(zh?'回复 ':'Reply to ')+d.reply_to.slice(-8);li.append(link);}
@@ -201,7 +213,7 @@ function updateLiveUI(force=false){
 }
 function showTraveler(id){
  const a=view?.snapshot.entities[id];if(!a)return;
- focusedRole=id;renderer.focusRole=id;updateLiveUI(true);modal(a.name);
+ focusPublicRole(id);modal(a.name);
  paragraph(lang==='zh'?'这是已入场的旅人。没有后续动作不代表模型正在思考或离线。':'An entered traveler. No active action does not establish the model’s status.');
  if(canControl&&id!==roleId){
   const walk=document.createElement('button');walk.className='gold';walk.textContent=lang==='zh'?'走到旁边':'Approach';walk.onclick=()=>{$('#modal').close();act('town.approach',{role_id:id});};
@@ -209,6 +221,7 @@ function showTraveler(id){
   $('#modal-body').append(walk,say);
  }
 }
+$('#focus-clear').onclick=()=>focusPublicRole(null);
 $('#event-filter').onchange=e=>{filterKind=e.target.value;updateLiveUI(true);};
 $('#load-history').onclick=async()=>{
  if(!historyCursor)return;const g=generation;const button=$('#load-history');button.disabled=true;
@@ -220,6 +233,12 @@ $('#join-mode').onclick=()=>{$('#welcome').hidden=!$('#welcome').hidden;if(!$('#
 $('#watch-mode').onclick=()=>{openWatch().catch(e=>toast(e.message));};
 
 function distance(a,b){return Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1]);}
+function sourceLabel(source,channel){
+ const zh=lang==='zh';
+ if(source==='scripted')return zh?' · 游戏脚本':' · scripted game feedback';
+ if(source==='authored')return channel==='intent'?(zh?' · 公开打算':' · public intention'):(zh?' · 公开发言':' · public speech');
+ return zh?' · 世界事件':' · world event';
+}
 function renderBubbles(){
  if(!renderer||!view)return;
  const now=renderer.now(),shown=bubbleQueue.active(now);
@@ -228,7 +247,8 @@ function renderBubbles(){
   const el=document.createElement('div');el.className='bubble'+(c.channel==='intent'?' intent':'');el.dataset.subject=c.subject;
   const name=document.createElement('strong'),msg=document.createElement('span'),accessible=document.createElement('span');
   const actor=view.snapshot.entities[c.subject],npc=map.targets.find(t=>t.id===c.subject);
-  name.textContent=(actor?.name||(npc?targetName(npc):tr('visitor')))+(c.channel==='intent'?(lang==='zh'?' · 公开打算':' · intention'):'');
+  el.dataset.source=c.source;
+  name.textContent=(actor?.name||(npc?targetName(npc):tr('visitor')))+sourceLabel(c.source,c.channel);
   msg.className='typed';msg.setAttribute('aria-hidden','true');msg.dataset.full=lang==='zh'?c.text:c.en||c.text;msg.dataset.started=String(c.started);
   accessible.className='sr-only';accessible.textContent=msg.dataset.full;
   el.append(name,msg,accessible);$('#bubbles').append(el);
@@ -239,7 +259,7 @@ function renderBubbles(){
  for(const el of $$('#bubbles .bubble')){
   const msg=el.querySelector('.typed'),chars=[...msg.dataset.full],count=renderer.reduced?chars.length:Math.max(1,Math.floor((now-Number(msg.dataset.started))*55));
   const visible=chars.slice(0,count).join('');if(msg.textContent!==visible)msg.textContent=visible;
-  const actor=view.snapshot.entities[el.dataset.subject],npc=map.targets.find(t=>t.id===el.dataset.subject),pos=actor?renderer.actorPosition(actor):npc;if(!pos)continue;
+  const actor=view.snapshot.entities[el.dataset.subject],npc=map.targets.find(t=>t.id===el.dataset.subject),pos=actor?renderer.actorPosition(actor):npc;el.hidden=!pos;if(!pos)continue;
   const anchor=renderer.project(pos.x,pos.y),width=el.offsetWidth,height=el.offsetHeight;
   const x=Math.max(5,Math.min(rect.width-width-5,anchor.x/100*rect.width-width/2));
   let y=Math.max(5,anchor.y/100*rect.height-height);
@@ -356,6 +376,10 @@ $('#agent').onclick=()=>{
    agentParagraph(panel,tr('identityKeyTitle'));agentParagraph(panel,tr('identityKeyWarning'));
    agentCopyField(panel,r.identity_token,'Private Agent identity token','agent-key-copy',tr('copyKey'),tr('keyCopied'));
    agentCopyField(panel,r.instructions,'Private Agent invitation','agent-copy',tr('copy'),tr('copied'));
+   const follow=document.createElement('button');follow.id='agent-follow';follow.className='text-button';
+   follow.textContent=lang==='zh'?'已保存令牌，公开关注此角色':'Key saved; observe this role publicly';
+   follow.onclick=()=>{focusPublicRole(r.role_id);$('#modal').close();openWatch().catch(e=>toast(e.message));};
+   panel.append(follow);
   }catch(e){if(agentPanelActive(panel)){error.textContent=e.message;button.disabled=false;resume.disabled=false;}}
  };
 };
