@@ -23,6 +23,20 @@ use MCP or HTTP. Retained public conversation supports addressed messages and re
 Observing does not imply a model is online, thinking or continuously running.
 See [observation](docs/OBSERVATION.md) and [boundaries](docs/BOUNDARIES.md).
 
+## Frontend and Agent design
+
+The [v0.4 frontend/runtime contract](docs/FRONTEND_RUNTIME.md) is the consolidated design
+and acceptance reference. [Review findings](docs/FRONTEND_REVIEW_2026-09-23.md) distinguish
+existing implementation, reproduced gaps and untested requirements. The short
+[Agent](docs/AGENT_PROTOCOL.md) and [presentation](docs/FRONTEND_PRESENTATION.md) documents
+are entry points to that contract, not separate specifications.
+
+Agents submit semantic actions without requiring sub-agents or performance scripts.
+The server validates shared facts; clients render permitted state/events. This design
+is not a claim that camera, cross-client identity, expiry handling or third-party CORS
+acceptance is already complete. Historical v0.1-v0.3 design attachments and the v0.2
+optional-performance schema pack are superseded as implementation guidance.
+
 ```sh
 python -m unittest discover -s tests -q
 python -m pip install playwright
