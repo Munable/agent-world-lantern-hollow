@@ -63,3 +63,20 @@ short-lived invitation gives the trusted Agent the same role key through idempot
 Use `--agent-public-url https://your-agent-origin` when a local browser serves remote Agents.
 
 Read-cost measurement and remaining limits: [acceptance](docs/READ_PERFORMANCE.md).
+
+## Frontend sample art
+
+The 0.4.0 frontend loads a reusable PNG/JSON sample pack: six appearances, four
+facings, idle/walk/talk/work clips, terrain and props. Open
+`/static/art-gallery.html` for the material viewer and `/static/sample-assets.zip`
+for the standalone pack. No model or sub-agent is required to render it.
+
+```sh
+python tools/build_sample_assets.py  # Development only: regenerate original art
+python tools/check_sample_assets.py # Controlled browser demo, screenshots/video
+```
+
+See [frontend asset acceptance](docs/FRONTEND_ASSET_ACCEPTANCE.md). This frontend
+thread owns materials, client integration and visual acceptance; autonomous model
+and kernel work is a separate workstream. Actual world state is never replaced
+with a scripted frontend animation result.

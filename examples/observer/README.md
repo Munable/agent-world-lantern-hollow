@@ -31,3 +31,12 @@ python -m http.server 9001 --bind 127.0.0.1 --directory examples/observer
 验证：`python tools/check_semantic_presentation.py` 在临时世界通过真实 MCP 提交 move/look/say/interact，
 同时观察官方像素页面与本示例，检查一致位置、原文、脚本标识、重复操作、版本拒绝和无凭据请求。
 这里的测试驱动不是模型，也不是 Sub-Agent。
+
+## Shared static art (0.4.0)
+
+This independent renderer now reads `assets.manifest` from `/play/map` and loads
+the public PNG/JSON sample pack. It imports no official renderer or kernel code.
+PNG decoding and dimensions are checked; missing assets show the existing basic
+markers with an explicit notice. World facts continue to come from public HTTP.
+No credentials are used for either images or state. Artwork is optional, not a
+new control protocol; this example remains read-only.

@@ -1,5 +1,6 @@
 // Independent read-only implementation: no imports from the game client or kernel.
 const $=s=>document.querySelector(s),NS='http://www.w3.org/2000/svg';
+let art=null,artError=false;
 let generation=0,timer=null,frame=null,base='',scene=null,map=null,serverTime=0,localTime=0;
 function element(name,attrs={},text){const el=document.createElementNS(NS,name);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);if(text!==undefined)el.textContent=text;return el;}
 function now(){return serverTime+(performance.now()-localTime)/1000;}
@@ -13,6 +14,29 @@ async function read(path,signal){
  const response=await fetch(base+path,{credentials:'omit',signal});
  if(!response.ok)throw new Error('HTTP '+response.status);
  return response.json();
+}
+async function loadArt(g){
+ if(map.assets?.manifest!=='/static/sample-assets.json')return;
+ const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),5000);
+ try{const m=await read('/static/sample-assets.json',controller.signal);
+  if(m.schema!=='lantern-sample-assets/1'||m.atlas!=='sample-atlas.png'||!m.frames||Object.keys(m.frames).length>600||![m.width,m.height].every(n=>Number.isInteger(n)&&n>0&&n<=2048))throw new Error('Unsupported sample art');
+  for(const f of Object.values(m.frames))if(![f.x,f.y,f.w,f.h].every(Number.isInteger)||f.x<0||f.y<0||f.w<1||f.h<1||f.x+f.w>m.width||f.y+f.h>m.height)throw new Error('Invalid sprite bounds');
+  const raw=await fetch(base+'/static/sample-atlas.png',{credentials:'omit',signal:controller.signal});if(!raw.ok)throw new Error('Atlas unavailable');const blob=await raw.blob();if(blob.size>1048576)throw new Error('Atlas too large');const image=await createImageBitmap(blob);const valid=image.width===m.width&&image.height===m.height;image.close();if(!valid)throw new Error('Atlas dimensions do not match');
+  if(g===generation)art=m;
+ }catch(error){if(g===generation)artError=true;}finally{clearTimeout(deadline);}
+}
+function figure(a){
+ if(!art)return element('circle',{r:.35,fill:'#285c67'});
+ const f=art.frames[`${a.appearance}/down/idle/0`];if(!f)return element('circle',{r:.35,fill:'#285c67'});
+ const svg=element('svg',{x:-.75,y:-29/16,width:1.5,height:2,viewBox:`${f.x} ${f.y} ${f.w} ${f.h}`,overflow:'hidden','data-sprite':a.appearance});
+ svg.append(element('image',{href:base+'/static/sample-atlas.png',width:art.width,height:art.height,crossorigin:'anonymous','image-rendering':'pixelated'}));return svg;
+}
+function animateFigure(node,a,time){
+ const svg=node.querySelector('[data-sprite]');if(!svg||!art)return;
+ let dir=a.facing||'down',clip=a.movement?'walk':a.busy?'work':'idle';
+ if(a.movement){const m=a.movement,i=Math.min(m.path.length-2,Math.max(0,Math.floor((time-m.start_at)/m.step_seconds)));if(i>=0){const p=m.path[i],q=m.path[i+1];dir=q[0]>p[0]?'right':q[0]<p[0]?'left':q[1]>p[1]?'down':'up';}if(time>=m.end_at)clip='idle';}
+ const fps={idle:2,walk:9,work:7}[clip],frame=matchMedia('(prefers-reduced-motion: reduce)').matches?0:Math.floor(time*fps)%4;
+ const f=art.frames[`${a.appearance}/${dir}/${clip}/${frame}`];if(f){svg.setAttribute('viewBox',`${f.x} ${f.y} ${f.w} ${f.h}`);svg.dataset.clip=clip;}
 }
 function drawMap(){
  const svg=$('#scene');svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${map.width} ${map.height}`);
@@ -31,7 +55,7 @@ function showSnapshot(result){
   const name=document.createElement('strong'),state=document.createElement('p');name.textContent=a.name;
   state.textContent=(a.movement?'行走中':a.busy?'活动中':'无进行中的动作')+' · ['+a.position.join(', ')+']';
   card.append(name,state);$('#roles').append(card);
-  const group=element('g',{'data-role':a.role_id});group.append(element('circle',{r:.35,fill:'#285c67'}),element('text',{x:.45,y:0},a.name));$('#travelers').append(group);
+  const group=element('g',{'data-role':a.role_id});group.append(figure(a),element('text',{x:.45,y:-.5},a.name));$('#travelers').append(group);
  }
  $('#events').replaceChildren();
  for(const event of result.events){
@@ -43,6 +67,7 @@ function showSnapshot(result){
   $('#events').append(line);
  }
  $('#health').dataset.state='ready';$('#health').textContent='公开快照已同步 · '+scene.meta.world_name+' · 灯塔'+(scene.meta.beacon.lit?'已点亮':'未点亮');
+ $('#health').dataset.assets=art?'ready':'fallback';if(artError)$('#health').textContent+=' · 素材不可用，显示基础标记';
  $('#health').dataset.lit=String(scene.meta.beacon.lit);
  $('#health').dataset.historyTruncated=String(!!result.history_truncated||!!result.has_older);
  if(result.history_truncated||result.has_older)$('#health').textContent+=' · 仅显示有限近期记录';
@@ -50,12 +75,12 @@ function showSnapshot(result){
 function draw(){
  if(scene)for(const a of Object.values(scene.entities)){
   const node=[...$('#travelers').children].find(n=>n.dataset.role===a.role_id),[x,y]=position(a,now());
-  if(node)node.setAttribute('transform',`translate(${x+.5} ${y+.5})`);
+  if(node){node.setAttribute('transform',`translate(${x+.5} ${y+1})`);animateFigure(node,a,now());}
  }
  frame=requestAnimationFrame(draw);
 }
 $('#connect').onsubmit=async event=>{
- event.preventDefault();const g=++generation;clearTimeout(timer);cancelAnimationFrame(frame);scene=null;
+ event.preventDefault();art=null;artError=false;const g=++generation;clearTimeout(timer);cancelAnimationFrame(frame);scene=null;
  $('#roles').replaceChildren();$('#events').replaceChildren();$('#scene').replaceChildren();
  try{
   const url=new URL($('#origin').value);if(!['http:','https:'].includes(url.protocol)||url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname))throw new Error('请输入不含凭据的世界 origin');
@@ -63,7 +88,7 @@ $('#connect').onsubmit=async event=>{
   let loaded;try{loaded=await read('/play/map',controller.signal);}finally{clearTimeout(deadline);}
   if(g!==generation)return;map=loaded;
   if(map.world_id!=='lantern-hollow'||map.presentation_version!==1)throw new Error('不兼容的世界表现版本');
-  drawMap();draw();
+  await loadArt(g);if(g!==generation)return;drawMap();draw();
  }catch(error){if(g===generation){$('#health').dataset.state='error';$('#health').textContent=error.message;}return;}
  async function sync(){
   const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),10000);

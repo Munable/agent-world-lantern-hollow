@@ -140,7 +140,9 @@ def main():
         assert all(token not in url+body+json.dumps(headers) for url,body,headers in traffic)
         world_requests=[x for x in traffic if x[0].startswith(server.url)]
         assert world_requests and all('authorization' not in headers and 'cookie' not in headers for _,_,headers in world_requests)
-        assert all(url in (server.url+'/play/map',server.url+'/watch/session') for url,_,_ in world_requests)
+        assert all(url.split('?')[0] in (server.url+'/play/map',server.url+'/watch/session',server.url+'/static/sample-assets.json',server.url+'/static/sample-atlas.png') for url,_,_ in world_requests)
+        expect(viewer.locator('#health')).to_have_attribute('data-assets','ready')
+        expect(viewer.locator('#scene [data-sprite]')).not_to_have_count(0)
         report['independent_origin_no_credential_no_control']=True
         unsupported=remote.new_page()
         unsupported.route('**/play/map',lambda route:route.fulfill(status=200,headers={'Content-Type':'application/json','Access-Control-Allow-Origin':other},body=json.dumps({**world_map,'presentation_version':999})))
