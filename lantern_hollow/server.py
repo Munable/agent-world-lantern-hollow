@@ -27,7 +27,7 @@ from agent_world.errors import AuthenticationRequired, InvalidArguments, Identit
 from agent_world.world_views import ViewResetRequired
 from agent_world.world_streams import StreamResetRequired
 from agent_world.diagnostics import SafeRequestTrace
-from .onboarding import checked_origin, invitation_prompt, connection_guide, GUIDE_VERSION
+from .onboarding import checked_origin, invitation_prompt, resume_prompt, connection_guide, GUIDE_VERSION
 from .world import WORLD
 from .map import manifest
 
@@ -146,7 +146,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
 
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.1"}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.3"}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -239,11 +239,30 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
                 if info["access_mode"]=="observe":raise PermissionDenied("Observers cannot create control invitations")
                 role=runtime.create_role(name.strip())
                 ticket=runtime.issue_join_ticket(universe,role["role_id"],ttl_seconds=600)
+                # Exchange once on behalf of the website so the user can save the
+                # exact long-lived role key. The Agent may exchange the same ticket
+                # later and will receive this same deterministic token, not a second key.
+                claimed=runtime.exchange_join_ticket(ticket["ticket"],expected_universe=universe)
                 return {"role_id":role["role_id"],"expires_at":ticket["expires_at"],"ticket":ticket["ticket"],
+                        "identity_token":claimed["token"],
                         "mcp_url":agent_origin+"/mcp","exchange_url":agent_origin+"/v1/join/exchange",
                         "guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
                         "instructions":invitation_prompt(agent_origin,ticket["ticket"],language=language)}
             return await asyncio.to_thread(issue)
+        except Exception as exc:return failure(exc)
+
+    @ui.post("/play/agent/resume")
+    async def agent_resume(request:Request):
+        try:
+            data=await body(request)
+            language=data.get("language","zh")
+            if language not in ("zh","en"):raise InvalidArguments("Unsupported invitation language")
+            def instructions():
+                _,info=identity(request)
+                if info["access_mode"]=="observe":raise PermissionDenied("Observers cannot resume a control identity")
+                return {"mode":"resume","guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
+                        "instructions":resume_prompt(agent_origin,language=language)}
+            return await asyncio.to_thread(instructions)
         except Exception as exc:return failure(exc)
 
     @ui.post("/play/logout")

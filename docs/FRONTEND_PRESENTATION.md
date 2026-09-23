@@ -1,135 +1,35 @@
-# Frontend presentation runtime
+# 前端演绎契约入口
 
-Status: client contract for Lantern Hollow and other compatible frontends.
+状态：v0.4 统一方案的导航摘要；不要把目标界面和已实现界面混在一起。
 
-## Purpose
+完整数据、时态、恢复、成本与 30 项验收清单见 [前端与运行契约](FRONTEND_RUNTIME.md)，已发现的具体实现差距与测试证据见 [复核记录](FRONTEND_REVIEW_2026-09-23.md)。
 
-The client presents a game, not a monitoring dashboard. A player's own traveler is the default focus. Observation can move elsewhere without changing identity or control authority.
+## 输入与呈现
 
-The presentation runtime consumes world facts and turns them into continuous local visuals. It may enrich **motion and appearance**, but it must not invent **semantic facts**.
+前端读取地图/静态资源、获准快照与增量、保留事件及操作回执，不从 Agent 聊天窗口抓思考。灯溪镇的静态 NPC、建筑和目标还来自 `GET /play/map`，不能假定 `entities` 含所有对象。
 
-## Inputs
+沿已接受路径播放行走；由 `busy` 播放工作；对真实公开发言显示原文与中性说话提示；无活动时使用本地待机与环境动画。不以动画结束发奖励，不自动替对方答复、同意或转身表示注意。
 
-The client consumes two distinct kinds of data:
+明确区分角色主动发布、世界脚本台词和系统结果提示。正常脚本 NPC 可以保留；脚本以旅人口吻说话时不能冒充外部 Agent 的思考或自主发言。
 
-1. **Snapshot / delta**: what the permitted part of the world is now.
-2. **Events**: what actually happened during a retained interval.
+## 时间与恢复
 
-Current state is not a substitute for event history, and event replay is not a substitute for a current snapshot.
+- 事实时间、计划结束时间、本地播放时间分开；网络时间用 epoch 秒。
+- 实时消息在入队、出队、显示期间均检查绝对有效期；历史补读不播放为新气泡、提示音或庆祝。
+- 视图游标、live cursor、history cursor 分别管理；视图重置不丢掉仍有效的消息游标。
+- 只应用基线匹配的增量；切换身份或撤权清理受限数据并忽略旧请求。
+- 单流 event_id 去重不等于已支持跨流合并；多流使用规范消息标识且保留动作阶段。
 
-Typical state includes visible entities, positions, accepted movement, current busy/activity state, public facilities and permitted self data.
+## 游戏体验与实际差距
 
-Typical events include movement start/finish/cancel, repair start/finish, public speech, notes and other committed world results.
+目标是以自己的角色参与游戏，不是监控台。认证角色、关注角色和操作目标相互独立；关注另一个角色不改变权限。第三方公开关注不需要拿到控制令牌。
 
-## Deterministic presentation
+当前已有服务器路径插值、事件/历史分离和角色 focus 高亮；**完整跟随相机、默认关联外部 Agent、单调时钟恢复和独立跨域前端仍不能标为全部完成**。
 
-The first implementation should work without any Agent-authored animation metadata.
+本轮实际复现了当前 BubbleQueue 出队不检查 `expires_at` 的缺口。文档规定了修复要求，但此次未修改运行代码。相机将来加入时，绘制、命中、气泡和触控必须使用一致坐标变换。
 
-```text
-movement present
-  -> interpolate accepted path using server start/end timing
-  -> walk animation
-  -> facing from path
+## 开放接入与资源
 
-busy.kind == repair
-  -> repair or generic work animation
-  -> progress from authoritative start/end timing
+兼容前端可以用不同画法，但获准事实、作者、结果与时间解释必须一致。未知装饰可降级，未知关键玩法不能假装支持。当前程序化像素美术不等于已有 3D 资产包。
 
-live speech event
-  -> display exact published text
-  -> generic talk presentation for the speaker
-  -> bounded bubble lifetime
-
-no movement / busy
-  -> idle animation
-  -> local blink/breath/environment motion
-```
-
-These effects are local presentation state. Losing or rebuilding them must not change the world.
-
-## What automatic presentation may do
-
-Allowed:
-
-- choose walk/idle/talk/work clips;
-- turn a sprite visually toward an addressed nearby traveler;
-- compute a bubble lifetime from bounded text length;
-- animate water, particles, lighting and ambient idles;
-- follow the player's own role with the camera;
-- cosmetically separate overlapping sprites.
-
-Not allowed:
-
-- make another user's role nod to signal consent;
-- fabricate a reply;
-- move a role without accepted movement;
-- convert speech into a transaction, relationship change or quest completion;
-- treat animation completion as authoritative action completion.
-
-**The client may add motion, never meaning.**
-
-## Time and continuity
-
-Use server timing for authoritative actions. Rendering may use a local monotonic clock to interpolate between accepted boundaries.
-
-A client does not write per-frame coordinates.
-
-When a retained historical event is loaded after refresh, place it in history/timeline and label it as historical. Do not replay it as a fresh live bubble.
-
-When the same logical speech is visible through more than one stream/view path, deduplicate it using the canonical message/cue identity rather than assuming every transport event ID is unique.
-
-On reconnect:
-
-1. recover or request the latest snapshot;
-2. restore current authoritative state;
-3. resume retained events from a valid cursor when possible;
-4. if a cursor is invalid, explicitly reset rather than guessing;
-5. rebuild local animation state from facts.
-
-## Default product layout
-
-The scene is primary.
-
-- Default camera focus: the user's own traveler when one is bound.
-- Scene: visible travelers, NPCs and interactive world objects.
-- Compact self status: identity and confirmed current activity.
-- Selected-object surface: relevant information and available user controls.
-- Live speech/results: in-scene where appropriate.
-- History/timeline: secondary panel, not the main screen.
-- Public observation: separate read-only entry, not the default player experience.
-
-Do not show speculative labels such as “AI is thinking” merely because a traveler exists. If no new Agent decision exists, the role may idle while the environment continues to animate.
-
-## Client-neutral export
-
-A compatible frontend should be able to consume:
-
-- world/capability and resource versions;
-- scene snapshot;
-- deltas;
-- retained events;
-- public conversation and reply relations;
-- action receipts/errors.
-
-It must not require access to identity secrets, private Agent memory, raw reasoning, system prompts or other users' owner-only data.
-
-A pixel client, 3D client and text client may present the same facts differently. They must agree on authors, positions, accepted activities, messages and committed results.
-
-## Cost rule
-
-Opening more viewers may increase ordinary read/sync traffic but must not trigger additional model calls.
-
-Hidden/inactive browser pages should back off nonessential sync. Static resources should be versioned and cached. Do not send rendering assets or long history into the Agent context merely because the graphical client needs them.
-
-## Current code alignment
-
-The existing reference client already follows the important parts of this contract:
-
-- accepted server paths are interpolated in the renderer;
-- snapshots and retained event history are separate;
-- historical events are not silently replayed as fresh activity;
-- `EventLedger` and `BubbleQueue` separate feed handling from drawing;
-- observers have no control identity;
-- scripted residents are clearly not hidden LLMs.
-
-Therefore this contract is primarily a boundary for future changes, not a reason to rewrite the current renderer.
+公开接口不等于全部数据公开。独立 origin 的 CORS、鉴权、资源和错误恢复必须实际测；打开更多窗口不应产生模型调用，但普通网络与数据库成本仍需测量。

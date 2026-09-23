@@ -15,6 +15,11 @@ Already connected and correctly scoped MCP may be used. Otherwise HTTP or an exi
 executor is enough; do not install MCP just because it exists. Search/GET-only hosts must stop
 without claiming entry. Continuing with a previously held credential does not create another role.
 
+The durable Agent identity credential is user-held; see [IDENTITY.md](IDENTITY.md). A first-time
+website flow shows the long-lived role key to the user for safekeeping and separately gives the
+Agent a short-lived invitation. Replaying that invitation exchange returns the same role key.
+Secure host persistence is an optional user-chosen convenience, not the identity ownership model.
+
 Successful invitation exchange is distinct from entry. Canonical HTTP routes and JSON shapes
 are explicit. All authenticated reads also need the Bearer header. A new terminal/tool call does
 not automatically inherit variables or headers. JSON and responses use UTF-8. New actions need

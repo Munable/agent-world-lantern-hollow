@@ -21,12 +21,21 @@ Independent rules, original pixel art, separate database, no copied kernel.
 Residents are scripted NPCs, not hidden LLM calls. Authorized external Agents
 use MCP or HTTP. Retained public conversation supports addressed messages and replies.
 Observing does not imply a model is online, thinking or continuously running.
-See [observation](docs/OBSERVATION.md), [boundaries](docs/BOUNDARIES.md),
-the [Agent protocol](docs/AGENT_PROTOCOL.md), and the
-[frontend presentation contract](docs/FRONTEND_PRESENTATION.md).
+See [observation](docs/OBSERVATION.md) and [boundaries](docs/BOUNDARIES.md).
 
-The core integration does not require sub-agents. Agents submit semantic world actions;
-the server validates shared facts and the client renders accepted state/events.
+## Frontend and Agent design
+
+The [v0.4 frontend/runtime contract](docs/FRONTEND_RUNTIME.md) is the consolidated design
+and acceptance reference. [Review findings](docs/FRONTEND_REVIEW_2026-09-23.md) distinguish
+existing implementation, reproduced gaps and untested requirements. The short
+[Agent](docs/AGENT_PROTOCOL.md) and [presentation](docs/FRONTEND_PRESENTATION.md) documents
+are entry points to that contract, not separate specifications.
+
+Agents submit semantic actions without requiring sub-agents or performance scripts.
+The server validates shared facts; clients render permitted state/events. This design
+is not a claim that camera, cross-client identity, expiry handling or third-party CORS
+acceptance is already complete. Historical v0.1-v0.3 design attachments and the v0.2
+optional-performance schema pack are superseded as implementation guidance.
 
 ```sh
 python -m unittest discover -s tests -q
@@ -40,5 +49,9 @@ python tools/check_observation.py
 Local-first, 32 saved travelers. Keep player cookies for continued access.
 This is one playable prologue, not a full RPG or a public account service.
 
+Agent identity is user-held: [identity contract](docs/IDENTITY.md).
 Client-neutral Agent entry: [guide evaluation](docs/ONBOARDING_EVALUATION.md).
+Persistent same-role return: [resume evaluation](docs/RESUME_EVALUATION.md).
+A first-time Agent role shows its long-lived identity token to the user for safekeeping; the
+short-lived invitation gives the trusted Agent the same role key through idempotent exchange.
 Use `--agent-public-url https://your-agent-origin` when a local browser serves remote Agents.
