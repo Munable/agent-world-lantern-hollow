@@ -4,6 +4,7 @@ const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
 const words={
  title:['灯溪镇','Lantern Hollow'],chapter:['序章 · 归途有光','PROLOGUE · THE HOMEWARD LIGHT'],sound:['声音','Sound'],help:['怎么玩','Guide'],location:['灯溪镇 · 溪岸','LANTERN HOLLOW · RIVERSIDE'],evening:['一个缓慢的黄昏','An unhurried evening'],connecting:['连接世界','Connecting'],online:['已与世界同步','World synchronized'],offline:['连接中断，正在重连','Disconnected · reconnecting'],guest:['世界正在等你','A world awaits'],welcomeTitle:['黄昏还在，<br>等一盏归航的灯。','A quiet dusk.<br>A light to bring home.'],welcomeBody:['沿着溪流散步，和居民聊聊。你留下的光，会在下次回来时继续亮着。','Wander by the river. Meet its people. The light you leave will still be here when you return.'],yourName:['旅人的名字','Traveler’s name'],enter:['进入小镇','Enter the village'],welcomeFoot:['无需模型账号 · 浏览器存档 · 原创像素场景','No AI account needed · Persistent save · Original pixel art'],chapterComplete:['序章完成','CHAPTER COMPLETE'],completeTitle:['归途有光','A light for home'],completeBody:['一盏灯，替这座小镇记住了你的到来。沿着溪岸再走走，或给下一位旅人留句话。','One light will remember your arrival. Take another walk along the river, or leave a note for the next traveler.'],leaveTrace:['去留下足迹 ↗','Leave a trace ↗'],keepWalking:['再散散步','Keep wandering'],visitor:['远道而来的旅人','A traveler from afar'],ready:['世界正在等你','A world awaits'],say:['说句话','Speak'],intent:['公开打算','Intention'],stop:['停下','Stop'],journalTitle:['今晚的小事','A little light'],journalIntro:['让一束光，重新照向溪流。','Bring a homeward glow back to the river.'],q1:['问候守灯人','Meet the lightkeeper'],q1Hint:['艾莉娅在东边的桥头等候。','Elia is waiting by the eastern bridge.'],q2:['寻回三枚星片','Gather three star shards'],q2Hint:['苔间、风里，还有溪畔。','Among moss, in the wind, by the stream.'],q3:['点亮归航灯塔','Relight the beacon'],q3Hint:['星片会记得你的光。','Let your little stars guide someone home.'],moss:['苔间','Moss'],sky:['风里','Sky'],river:['溪畔','River'],findKeeper:['去找艾莉娅','Find Elia'],findShard:['去找下一枚星片','Find the next shard'],repair:['去点亮灯塔','Relight the beacon'],neighbors:['小镇里的熟面孔','Familiar faces'],scripted:['规则驱动居民','Scripted residents'],elia:['艾莉娅','Elia'],rowan:['罗温','Rowan'],fern:['芙恩','Fern'],keeper:['守灯人','Lightkeeper'],smith:['匠人','Artisan'],gardener:['花匠','Gardener'],notesTitle:['后来的人会看见','For the next traveler'],visitBoard:['留言板 ↗','Board ↗'],emptyNotes:['这里还很安静。第一句话，留给你。','Quiet here, for now. The first words could be yours.'],inviteAgent:['邀请一个外部 Agent','Invite an external Agent'],footer:['世界留住足迹，旅人带走故事。','The world keeps our traces. We carry its stories.'],serverTruth:['服务器保存 · 不止于此刻','Server-saved · beyond this moment'],showJournal:['旅人手记','Journal'],walking:['沿着小路前行…','Following the path…'],working:['修复灯座中…','Mending the beacon…'],idle:['静听溪流 · 已保存','By the river · saved'],enterFirst:['先取个名字，进入小镇吧。','Choose a name and enter the village first.'],failed:['操作没有完成，请重试。','The action did not complete. Please retry.'],uncertain:['结果待确认，请勿重复点击。','Confirming the result. Please do not repeat the action.'],recovered:['已恢复上次的操作结果。','Recovered the previous action result.'],saved:['已保存到世界。','Saved to the world.'],unreachable:['那里暂时无法到达，试试小路。','That spot is not reachable. Try the path.'],writeNote:['给后来的旅人留句话','Leave a note for a later traveler'],writeNoteHint:['留言将保存在这个世界，其他旅人也能看见。不要写入隐私或密钥。','Your note stays in this world for other travelers. Do not include secrets or private information.'],publicSpeech:['公开说句话','Say something publicly'],publicIntent:['公开表达打算','Share a public intention'],intentHint:['这是你主动说出的打算，不是读取 AI 的内部思考。','This is an intention you choose to share, not access to an AI’s private reasoning.'],send:['留下这句话','Share these words'],helpTitle:['慢一点，也没关系','No need to hurry'],helpBody:['点击地面就能走过去，点击居民或发光物会自动寻路并互动。','Click the ground to walk. Click a resident or a glowing object to walk over and interact.'],keysMove:['WASD / 方向键','WASD / arrows'],moveHelp:['移动，目标位置由服务器裁定。','Move, with server-authoritative positions.'],interactHelp:['与最近的人或物互动。','Interact with someone or something nearby.'],stopHelp:['取消行走或修灯动作。','Cancel walking or beacon repair.'],helpSave:['刷新、关掉页面再回来，位置和进度仍会保留。若清除浏览器凭据，就不能自动找回原角色。此版本是本地优先的参考作品，不是公开账号服务。','Reload or close the page: position and progress persist. Clearing browser credentials loses automatic access to that role. This is a local-first reference, not a public account service.'],helpNpc:['居民有编写好的性格和对话；不是后台偷偷调用的大模型。外部 Agent 可以通过独立的 MCP 入口真正参与。','Residents have authored personalities and dialogue; they are not hidden LLM calls. External Agents can participate through the separate MCP entrance.'],agentTitle:['让你的 Agent 来散散步','Bring your Agent along'],agentHint:['第一次创建角色会同时生成一张 10 分钟邀请和一枚长期身份令牌。身份令牌就是这个角色的钥匙，请由你自己妥善保存。','Creating a role produces both a 10-minute invitation and a long-lived identity token. The identity token is the key to this role; keep it yourself and store it safely.'],resumeAgent:['继续已有 Agent','Continue an existing Agent'],resumeHint:['已有角色时，使用你自己保存的身份令牌继续。网页不会替你保存令牌，也不会新建角色。','To continue an existing role, use the identity token you saved. This page does not store the token or create another role.'],agentLocal:['本地地址只适合同一电脑上的 Agent；其他设备接入需要你自行部署可达的 HTTPS 地址。','A loopback address works only on this computer. Other devices need a reachable HTTPS deployment.'],generate:['创建角色与邀请','Create role and invitation'],copy:['复制接入说明','Copy connection instructions'],copied:['已复制，请私下交给信任的 Agent。','Copied. Share privately with an Agent you trust.'],identityKeyTitle:['长期身份令牌 · 只交给你信任的人','Long-lived identity token · share only with people or Agents you trust'],identityKeyWarning:['请像保管钱包恢复密钥一样保存它。任何拿到这枚令牌的人都能控制这个角色；网页不会替你长期保存。','Store this like a wallet recovery key. Anyone holding it can control this role; the website will not keep a long-term copy for you.'],copyKey:['复制身份令牌','Copy identity token'],keyCopied:['身份令牌已复制，请妥善保存。','Identity token copied. Store it safely.'],resumeKeyHint:['粘贴你自己保存的身份令牌。它只在当前页面里用于生成接入说明，不会发送到服务器或保存到浏览器存储。','Paste the identity token you saved. It is used only in this page to build the connection instructions; it is not sent to the server or stored in browser storage.'],resumeKeyPlaceholder:['粘贴 awid_… 身份令牌','Paste the awid_… identity token'],buildResume:['生成续接说明','Build resume instructions'],noteWalk:['先走到留言板旁，再留下故事。','Walk over to the board before leaving a story.'],timerAttention:['世界仍在处理这个动作…','The world is still processing this action…'],loggedOut:['原凭据已失效，请重新进入。','Your previous credential expired. Please enter again.']
 };
+words.resumeAccess=['角色续接','Resume Agent'];
 words.observer=['只读观察 · 不能控制角色','Observer · control disabled'];
 words.speechHint=['这句话会公开显示给附近的旅人。它不是永久留言，也不要包含隐私或密钥。','This is public speech, not a permanent note. Do not include private information or keys.'];
 let lang=localStorage.getItem('lh.lang')||'zh';
@@ -254,6 +255,7 @@ let lastKeyAt=0;const held=new Set();
 function frame(t){if(renderer){renderer.draw(t);renderBubbles();if(held.size&&roleId&&canControl&&$('#completion').hidden&&!$('#modal').open&&t-lastKeyAt>280&&!working){const me=view?.snapshot.meta.self;const [key]=held;const move={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[key];if(move&&me){lastKeyAt=t;const p=renderer.actorPosition(me);const x=Math.round(p.x)+move[0],y=Math.round(p.y)+move[1];if(!blocked.has(`${x},${y}`)){selected=null;renderer.target=null;act('town.move',{x,y});}}}}
  requestAnimationFrame(frame);
 }
+$('#modal').addEventListener('close',()=>{if(!$('#modal').open)$('#modal-body').replaceChildren();});
 function modal(title){text($('#modal-title'),title);$('#modal-body').replaceChildren();$('#modal').showModal();}
 function paragraph(value,cls){const p=document.createElement('p');p.textContent=value;if(cls)p.className=cls;$('#modal-body').append(p);return p;}
 function showComposer(kind,reply={}){
@@ -287,12 +289,75 @@ $('#quest-action').onclick=()=>{const me=view?.snapshot.meta.self;if(!me)return;
 $$('[data-target]').forEach(b=>{b.onclick=()=>goTo(b.dataset.target);b.onmouseenter=()=>{if(renderer)renderer.target=b.dataset.target;};b.onmouseleave=()=>{if(renderer)renderer.target=selected;};});
 $('#complete-continue').onclick=()=>{$('#completion').hidden=true;goTo('board');};$('#complete-close').onclick=()=>$('#completion').hidden=true;
 $('#join-form').onsubmit=async e=>{e.preventDefault();$('#join').disabled=true;$('#join-error').hidden=true;try{await request('/play/join',{method:'POST',data:{name:$('#name').value.trim(),appearance}});await openSession();sound('join');}catch(err){text($('#join-error'),err.message);$('#join-error').hidden=false;}finally{$('#join').disabled=false;}};
+function agentPanel(title){
+ modal(title);
+ const panel=document.createElement('section');
+ $('#modal-body').append(panel);
+ return panel;
+}
+function agentPanelActive(panel){return panel.isConnected&&$('#modal').open;}
+function agentParagraph(panel,value,cls='small'){
+ const p=document.createElement('p');p.textContent=value;p.className=cls;panel.append(p);
+}
+function agentCopyField(panel,value,label,id,copyLabel,message){
+ const area=document.createElement('textarea');area.readOnly=true;area.value=value;
+ area.rows=4;area.setAttribute('aria-label',label);
+ const copy=document.createElement('button');copy.id=id;copy.className='gold';copy.textContent=copyLabel;
+ copy.onclick=async()=>{
+  try{await navigator.clipboard.writeText(area.value);if(agentPanelActive(panel))toast(message);}
+  catch{if(agentPanelActive(panel)){area.focus();area.select();}}
+ };
+ panel.append(area,copy);
+}
+function showAgentResume(){
+ const panel=agentPanel(tr('resumeAgent'));
+ agentParagraph(panel,tr('resumeKeyHint'));
+ const key=document.createElement('input');key.type='password';key.autocomplete='off';
+ key.spellcheck=false;key.maxLength=256;key.placeholder=tr('resumeKeyPlaceholder');
+ key.setAttribute('aria-label','Saved Agent identity token');
+ const build=document.createElement('button');build.id='agent-resume-build';
+ build.className='gold';build.textContent=tr('buildResume');
+ const error=document.createElement('p');error.className='error';error.setAttribute('role','alert');
+ panel.append(key,build,error);
+ build.onclick=async()=>{
+  const token=key.value.trim();
+  if(!/^awid_[A-Za-z0-9_-]{1,251}$/.test(token)){
+   error.textContent=lang==='zh'?'身份令牌格式不正确。':'Invalid identity token format.';return;
+  }
+  const language=lang;build.disabled=true;error.textContent='';
+  try{
+   const r=await request('/play/agent/resume',{method:'POST',data:{language}});
+   if(!agentPanelActive(panel))return;
+   const instructions=r.instructions+(language==='zh'?' 身份令牌：':' Identity token: ')+token;
+   key.value='';panel.replaceChildren();
+   agentCopyField(panel,instructions,'Private Agent resume','agent-copy',tr('copy'),tr('copied'));
+  }catch(e){if(agentPanelActive(panel)){error.textContent=e.message;build.disabled=false;}}
+ };
+ key.focus();
+}
+$('#resume-existing').onclick=showAgentResume;
 $('#agent').onclick=()=>{
- modal(tr('agentTitle'));paragraph(tr('agentHint'));paragraph(tr('agentLocal'),'small');paragraph(tr('resumeHint'),'small');const name=document.createElement('input');name.maxLength=24;name.placeholder=lang==='zh'?'Agent 的名字':'Agent name';name.value=lang==='zh'?'灯溪访客':'Guest Agent';name.setAttribute('aria-label','Agent name');const button=document.createElement('button');button.id='agent-generate';button.className='gold';button.textContent=tr('generate');const resume=document.createElement('button');resume.id='agent-resume';resume.className='text-button';resume.textContent=tr('resumeAgent');$('#modal-body').append(name,button,resume);
- const showInstructions=(instructions,label)=>{const area=document.createElement('textarea');area.readOnly=true;area.value=instructions;area.style.minHeight='190px';area.setAttribute('aria-label',label);const copy=document.createElement('button');copy.id='agent-copy';copy.className='gold';copy.textContent=tr('copy');copy.onclick=async()=>{try{await navigator.clipboard.writeText(instructions);toast(tr('copied'));}catch{area.focus();area.select();}};$('#modal-body').append(area,copy);};
- const showIdentityKey=token=>{paragraph(tr('identityKeyTitle'));paragraph(tr('identityKeyWarning'),'small');const key=document.createElement('textarea');key.readOnly=true;key.value=token;key.rows=3;key.setAttribute('aria-label','Private Agent identity token');const copy=document.createElement('button');copy.id='agent-key-copy';copy.className='text-button';copy.textContent=tr('copyKey');copy.onclick=async()=>{try{await navigator.clipboard.writeText(token);toast(tr('keyCopied'));}catch{key.focus();key.select();}};$('#modal-body').append(key,copy);};
- button.onclick=async()=>{button.disabled=true;try{const r=await request('/play/agent',{method:'POST',data:{name:name.value.trim(),language:lang}});$('#modal-body').replaceChildren();showIdentityKey(r.identity_token);showInstructions(r.instructions,'Private Agent invitation');}catch(e){paragraph(e.message,'error');button.disabled=false;}};
- resume.onclick=()=>{const body=$('#modal-body');body.replaceChildren();paragraph(tr('resumeKeyHint'),'small');const key=document.createElement('input');key.type='password';key.autocomplete='off';key.spellcheck=false;key.placeholder=tr('resumeKeyPlaceholder');key.setAttribute('aria-label','Saved Agent identity token');const build=document.createElement('button');build.id='agent-resume-build';build.className='gold';build.textContent=tr('buildResume');body.append(key,build);build.onclick=async()=>{const token=key.value.trim();if(!/^awid_[A-Za-z0-9_-]{16,256}$/.test(token)){paragraph(lang==='zh'?'请输入有效的 awid_ 身份令牌。':'Enter a valid awid_ identity token.','error');return;}build.disabled=true;try{const r=await request('/play/agent/resume',{method:'POST',data:{language:lang}});const instructions=r.instructions+(lang==='zh'?' 身份令牌：':' Identity token: ')+token+'.';key.value='';body.replaceChildren();showInstructions(instructions,'Private Agent resume');}catch(e){paragraph(e.message,'error');build.disabled=false;}};};
+ const panel=agentPanel(tr('agentTitle'));
+ agentParagraph(panel,tr('agentHint'));agentParagraph(panel,tr('agentLocal'));agentParagraph(panel,tr('resumeHint'));
+ const name=document.createElement('input');name.maxLength=24;
+ name.placeholder=lang==='zh'?'Agent 的名字':'Agent name';name.value=lang==='zh'?'灯溪访客':'Guest Agent';
+ name.setAttribute('aria-label','Agent name');
+ const button=document.createElement('button');button.id='agent-generate';button.className='gold';button.textContent=tr('generate');
+ const resume=document.createElement('button');resume.id='agent-resume';resume.className='text-button';resume.textContent=tr('resumeAgent');
+ resume.onclick=showAgentResume;
+ const error=document.createElement('p');error.className='error';error.setAttribute('role','alert');
+ panel.append(name,button,resume,error);
+ button.onclick=async()=>{
+  button.disabled=true;resume.disabled=true;error.textContent='';
+  try{
+   const r=await request('/play/agent',{method:'POST',data:{name:name.value.trim(),language:lang}});
+   if(!agentPanelActive(panel))return;
+   panel.replaceChildren();
+   agentParagraph(panel,tr('identityKeyTitle'));agentParagraph(panel,tr('identityKeyWarning'));
+   agentCopyField(panel,r.identity_token,'Private Agent identity token','agent-key-copy',tr('copyKey'),tr('keyCopied'));
+   agentCopyField(panel,r.instructions,'Private Agent invitation','agent-copy',tr('copy'),tr('copied'));
+  }catch(e){if(agentPanelActive(panel)){error.textContent=e.message;button.disabled=false;resume.disabled=false;}}
+ };
 };
 let audioCtx,audioOn=false,ambientTimer;
 function tone(freq,duration,volume=.025,delay=0){if(!audioCtx||!audioOn)return;const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),t=audioCtx.currentTime+delay;osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(volume,t+.03);gain.gain.exponentialRampToValueAtTime(.001,t+duration);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+duration+.05);}

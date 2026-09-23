@@ -35,7 +35,9 @@ python tools/check_observation.py
 Local-first, 32 saved travelers. Keep player cookies for continued access.
 This is one playable prologue, not a full RPG or a public account service.
 
-Agent identity is user-held: [identity contract](docs/IDENTITY.md).
+Start with the user-held [identity contract](docs/IDENTITY.md), the current `/agent` wire guide,
+and [reference boundaries](docs/BOUNDARIES.md). Evaluation documents record evidence rather than
+defining alternative product rules. [Current review](docs/REVIEW.md) separates fixes from deferred work.
 Client-neutral Agent entry: [guide evaluation](docs/ONBOARDING_EVALUATION.md).
 Persistent same-role return: [resume evaluation](docs/RESUME_EVALUATION.md).
 A first-time Agent role shows its long-lived identity token to the user for safekeeping; the

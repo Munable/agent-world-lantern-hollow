@@ -1,10 +1,14 @@
 # Client-neutral onboarding: observed behavior and revision
 
+Historical development evidence, not a compatibility guarantee. The current user-held identity
+contract is [IDENTITY.md](IDENTITY.md); current wire instructions are `/agent` (guide v5).
+The model samples below were not rerun across all hosts after every guide revision.
+
 The website must not know which model, CLI, code executor or Agent application is receiving
 an invitation. It supplies a service entry point and an invitation, not a persona or a
 mandatory game script. These changes stay in the example application; the kernel is unchanged.
 
-## Shipped contract
+## Historically evaluated contract
 
 The browser copies one server-generated sentence: use currently available tools to GET the
 public `/agent` guide, then enter and choose a short visit. The invitation is outside the URL.

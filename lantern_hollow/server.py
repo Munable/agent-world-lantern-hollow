@@ -28,6 +28,7 @@ from agent_world.world_views import ViewResetRequired
 from agent_world.world_streams import StreamResetRequired
 from agent_world.diagnostics import SafeRequestTrace
 from .onboarding import checked_origin, invitation_prompt, resume_prompt, connection_guide, GUIDE_VERSION
+from . import __version__
 from .world import WORLD
 from .map import manifest
 
@@ -37,15 +38,12 @@ CORE_PIN="60ebf42b80e2f32a7e2ab5bc84ca87d43006ad97"
 
 
 def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow", agent_public_url=None):
+    public_url=checked_origin(public_url)
     parsed=urlsplit(public_url)
-    if parsed.scheme not in ("http","https") or not parsed.hostname or parsed.username or parsed.password or parsed.path not in ("","/") or parsed.query or parsed.fragment:
-        raise ValueError("public_url must be a credential-free origin")
-    if parsed.scheme!="https" and parsed.hostname not in ("127.0.0.1","localhost","::1"):
-        raise ValueError("Public deployments require HTTPS")
-    public_url=public_url.rstrip("/")
     agent_origin=checked_origin(agent_public_url or public_url)
+    agent_host=urlsplit(agent_origin).hostname
     installer=lambda runtime,u:install_world(runtime,u,WORLD)
-    mcp,_,runtime=create_mcp_app(db_path,universe,auth_required=True,installer=installer,host=parsed.hostname)
+    mcp,_,runtime=create_mcp_app(db_path,universe,auth_required=True,installer=installer,host=agent_host)
     api=create_world_http(db_path,universe,auth_required=True,installer=installer)
     gateway=WorldGateway(runtime,universe,auth_required=True)
     ui=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
@@ -146,7 +144,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
 
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.3"}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":__version__}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -181,9 +179,8 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
                 token,info=identity(request)
                 boot=runtime.bootstrap(universe,info["role_id"],identity_token=token,record_presence=True)
                 # Current snapshot is authoritative; only new cues are played on a fresh page.
-                page=runtime.read_changes_page(universe,info["role_id"],runtime.event_floor(universe),identity_token=token)
                 observed=observation(info["role_id"],token)
-                return {**observed,"role_id":info["role_id"],"event_cursor":page["latest_event_seq"],"access_mode":info["access_mode"]}
+                return {**observed,"role_id":info["role_id"],"event_cursor":boot["latest_event_seq"],"access_mode":info["access_mode"]}
             return await asyncio.to_thread(read)
         except Exception as exc:return failure(exc)
 
@@ -209,7 +206,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         try:
             data=await body(request)
             name=data.get("function")
-            if name not in {f.name for f in WORLD.functions}:raise InvalidArguments("Unknown village action")
+            if not isinstance(name,str) or name not in {f.name for f in WORLD.functions}:raise InvalidArguments("Unknown village action")
             def invoke():
                 token,info=identity(request)
                 if data.get("role_id",info["role_id"])!=info["role_id"]:raise IdentityScopeMismatch("Action does not match this traveler")
@@ -230,6 +227,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     async def agent(request:Request):
         try:
             data=await body(request)
+            if set(data)-{"name","language"}:raise InvalidArguments("Unexpected invitation arguments")
             name=data.get("name","访客 Agent")
             language=data.get("language","zh")
             if language not in ("zh","en"):raise InvalidArguments("Unsupported invitation language")
@@ -255,14 +253,12 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
     async def agent_resume(request:Request):
         try:
             data=await body(request)
+            if set(data)-{"language"}:raise InvalidArguments("Resume helper accepts language only, never a token")
             language=data.get("language","zh")
             if language not in ("zh","en"):raise InvalidArguments("Unsupported invitation language")
-            def instructions():
-                _,info=identity(request)
-                if info["access_mode"]=="observe":raise PermissionDenied("Observers cannot resume a control identity")
-                return {"mode":"resume","guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
-                        "instructions":resume_prompt(agent_origin,language=language)}
-            return await asyncio.to_thread(instructions)
+            # Public text helper, not an authentication or control endpoint.
+            return {"mode":"resume","guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
+                    "instructions":resume_prompt(agent_origin,language=language)}
         except Exception as exc:return failure(exc)
 
     @ui.post("/play/logout")
@@ -284,7 +280,6 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             data=await body(request)
             def do_exchange():
                 result=runtime.exchange_join_ticket(data.get("ticket"),expected_universe=universe)
-                if result["universe"]!=universe:raise IdentityScopeMismatch("Wrong world invitation")
                 return {"identity":{k:result[k] for k in ("token_id","token","role_id","universe","expires_at")},
                         "next":{"tool":"town.enter","arguments":{"arguments":{},"operation_id":"enter-"+result["token_id"]}}}
             return await asyncio.to_thread(do_exchange)
@@ -303,7 +298,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
             async with retention_lifespan(runtime,universe):
                 async with timer_lifespan(runtime,universe,interval=0.10):yield
     app=Starlette(routes=[Mount("/",app=Dispatch())],lifespan=lifespan)
-    app.add_middleware(TrustedHostMiddleware,allowed_hosts=[parsed.hostname,"127.0.0.1","localhost","testserver"])
+    app.add_middleware(TrustedHostMiddleware,allowed_hosts=[parsed.hostname,agent_host,"127.0.0.1","localhost","testserver"])
     app.state.runtime=runtime
     trace_dir=os.getenv('LANTERN_TRACE_DIR')
     app.add_middleware(SafeRequestTrace,path=Path(trace_dir)/('requests-'+str(os.getpid())+'.jsonl') if trace_dir else None,

@@ -50,7 +50,7 @@ class OnboardingPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         self.assertTrue(response.headers['content-type'].startswith('text/plain'))
         self.assertIn('no-store',response.headers['cache-control'])
-        self.assertIn('Guide version: 4',response.text)
+        self.assertIn('Guide version: 5',response.text)
         self.assertIn('https://agents.example.test/v1/bootstrap',response.text)
         self.assertNotIn('awjt_',response.text);self.assertNotIn('awid_',response.text)
         self.assertNotRegex(response.text,r'(?i)if.*(ChatGPT|Claude|Codex|OpenCode|Kimi)')
@@ -84,7 +84,7 @@ class OnboardingPromptTests(unittest.TestCase):
         r=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh'})
         self.assertEqual(r.status_code,200,r.text)
         data=r.json()
-        self.assertEqual(data['mode'],'resume');self.assertEqual(data['guide_version'],'4')
+        self.assertEqual(data['mode'],'resume');self.assertEqual(data['guide_version'],'5')
         self.assertEqual(data['instructions'],resume_prompt('https://agents.example.test'))
         self.assertEqual(data['guide_url'],'https://agents.example.test/agent')
         for forbidden in ('ticket','role_id','exchange_url','token'):self.assertNotIn(forbidden,data)
@@ -96,10 +96,10 @@ class OnboardingPromptTests(unittest.TestCase):
         r=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'language':'bad'})
         self.assertEqual(r.status_code,422)
         with w._conn(readonly=True) as c:self.assertEqual(c.execute('SELECT COUNT(*) FROM roles').fetchone()[0],before)
-    def test_observer_cannot_mint_or_resume_control_identity(self):
+    def test_observer_cannot_mint_but_can_read_public_resume_instructions(self):
         invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'bad'})
         resume=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh'})
-        self.assertEqual(invite.status_code,401);self.assertEqual(resume.status_code,401)
+        self.assertEqual(invite.status_code,401);self.assertEqual(resume.status_code,200)
     def test_exact_guide_entry_shape_runs_without_guessed_api(self):
         self.join_player()
         invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'world guest'}).json()
@@ -122,13 +122,132 @@ class OnboardingPromptTests(unittest.TestCase):
         self.assertEqual(self.client.post('/v1/streams/conversation/read',headers=headers,json={'limit':10}).status_code,200)
     def test_html_uses_server_instructions_not_a_second_hardcoded_prompt(self):
         js=(Path(__file__).resolve().parents[1]/'lantern_hollow/web/app.js').read_text(encoding='utf-8')
-        self.assertIn("showInstructions(r.instructions,'Private Agent invitation')",js)
-        self.assertIn("showIdentityKey(r.identity_token)",js)
-        self.assertIn("request('/play/agent/resume'",js)
-        self.assertIn("Identity token: ')+token",js)
-        self.assertNotIn("data:{language:lang,token",js)
-        self.assertNotIn('localStorage.setItem(\'agent',js)
+        self.assertIn("agentCopyField(panel,r.instructions,'Private Agent invitation'",js)
+        self.assertIn("agentCopyField(panel,r.identity_token,'Private Agent identity token'",js)
+        self.assertIn("request('/play/agent/resume',{method:'POST',data:{language}})",js)
+        self.assertIn("agentPanelActive(panel)",js)
         self.assertNotIn('Ask the human to configure the connector',js)
+    def counts(self):
+        with self.app.state.runtime._conn(readonly=True) as c:
+            return tuple(c.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
+                         for table in ('roles','identity_tokens','join_tickets'))
+
+    def test_fresh_browser_resume_template_has_no_identity_side_effects(self):
+        before=self.counts()
+        for language in ('zh','en'):
+            r=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':language})
+            self.assertEqual(r.status_code,200)
+            self.assertEqual(set(r.json()),{'mode','guide_url','guide_version','instructions'})
+            self.assertNotIn('set-cookie',r.headers)
+        self.assertEqual(self.counts(),before)
+        self.assertEqual(self.client.get('/v1/whoami').status_code,401)
+        self.assertEqual(self.counts(),before)
+
+    def test_resume_template_rejects_token_and_role_arguments(self):
+        before=self.counts()
+        for extra in ({'token':'not-a-token'},{'role_id':'another-role'},{'ticket':'not-a-ticket'}):
+            r=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh',**extra})
+            self.assertEqual(r.status_code,422)
+        self.assertEqual(self.counts(),before)
+
+    def test_saved_key_can_complete_first_entry_after_invitation_expiry(self):
+        self.join_player()
+        invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'Saved role'}).json()
+        before=self.counts()
+        with self.app.state.runtime._conn() as c:c.execute('UPDATE join_tickets SET expires_at=0')
+        self.assertGreaterEqual(self.client.post('/v1/join/exchange',json={'ticket':invite['ticket']}).status_code,400)
+        self.assertIn('world_entry_state.view.meta.self',connection_guide('https://world.test'))
+        with TestClient(create_app(self.app.state.runtime.db_path)) as fresh:
+            fresh.headers['Authorization']='Bearer '+invite['identity_token']
+            who=fresh.get('/v1/whoami');self.assertEqual(who.status_code,200)
+            boot=fresh.get('/v1/bootstrap');self.assertEqual(boot.status_code,200)
+            self.assertIsNone(boot.json()['world_entry_state']['view']['meta']['self'])
+            result=fresh.post('/v1/functions/town.enter/invoke',json={'operation_id':'first-entry-with-saved-key','arguments':{}})
+            self.assertEqual(result.status_code,200)
+            boot=fresh.get('/v1/bootstrap').json()
+            self.assertEqual(boot['world_entry_state']['view']['meta']['self']['role_id'],invite['role_id'])
+            self.assertEqual(who.json()['role_id'],invite['role_id'])
+        self.assertEqual(self.counts(),before)
+
+    def test_two_fresh_clients_use_one_key_without_copying_sessions(self):
+        self.join_player()
+        invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'Portable role'}).json()
+        before=self.counts()
+        for index in range(2):
+            with TestClient(create_app(self.app.state.runtime.db_path)) as fresh:
+                self.assertFalse(fresh.cookies)
+                fresh.headers['Authorization']='Bearer '+invite['identity_token']
+                who=fresh.get('/v1/whoami');self.assertEqual(who.status_code,200)
+                self.assertEqual(who.json()['role_id'],invite['role_id'])
+                boot=fresh.get('/v1/bootstrap').json()
+                if boot['world_entry_state']['view']['meta']['self'] is None:
+                    self.assertEqual(index,0)
+                    result=fresh.post('/v1/functions/town.enter/invoke',json={'operation_id':'portable-entry','arguments':{}})
+                    self.assertEqual(result.status_code,200)
+                boot=fresh.get('/v1/bootstrap').json()
+                self.assertEqual(boot['world_entry_state']['view']['meta']['self']['role_id'],invite['role_id'])
+        with self.app.state.runtime._conn(readonly=True) as c:
+            self.assertEqual(c.execute('SELECT COUNT(*) FROM operations WHERE actor_role_id=?',(invite['role_id'],)).fetchone()[0],1)
+        self.assertEqual(self.counts(),before)
+
+    def test_missing_revoked_or_wrong_world_key_never_creates_identity(self):
+        self.join_player()
+        invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={}).json()
+        w=self.app.state.runtime
+        metadata=w.resolve_identity_token(invite['identity_token'])
+        w.revoke_identity_token(metadata['token_id'])
+        other=w.issue_identity_token('other-world',invite['role_id'])['token']
+        before=self.counts()
+        for token in ('',invite['identity_token'],other):
+            headers={'Authorization':'Bearer '+token} if token else {}
+            for path in ('/v1/whoami','/v1/bootstrap'):
+                self.assertIn(self.client.get(path,headers=headers).status_code,(401,403))
+        self.assertGreaterEqual(self.client.post('/v1/join/exchange',json={'ticket':invite['ticket']}).status_code,400)
+        self.assertEqual(self.counts(),before)
+
+    def test_shared_origin_validation_rejects_ambiguous_or_multiline_urls(self):
+        bad=('https://world.test\n','https://world.test\t','https://world.test\\evil.test',
+             'https://@world.test','https://world.test:bad',None)
+        for origin in bad:
+            with self.subTest(origin=origin):
+                with self.assertRaises(ValueError):checked_origin(origin)
+                with self.assertRaises(ValueError):create_app(Path(self.temp.name)/'bad.sqlite3',public_url=origin)
+        self.assertEqual(checked_origin('HTTPS://World.Test:443/'),'https://world.test')
+        self.assertEqual(checked_origin('http://localhost:80/'),'http://localhost')
+
+    def test_public_agent_host_is_explicitly_allowed_without_relaxing_ui_origin(self):
+        self.assertEqual(self.client.get('/agent',headers={'Host':'agents.example.test'}).status_code,200)
+        self.assertEqual(self.client.get('/agent',headers={'Host':'untrusted.example'}).status_code,400)
+        denied=self.client.post('/play/join',headers={'Host':'agents.example.test','Origin':'https://agents.example.test','X-Lantern-Client':'1'},json={'name':'Wrong origin'})
+        self.assertEqual(denied.status_code,403)
+
+    def test_mcp_accepts_configured_agent_origin(self):
+        from mcp.types import LATEST_PROTOCOL_VERSION
+        w=self.app.state.runtime
+        role=w.create_role('MCP host probe')['role_id']
+        token=w.issue_identity_token('lantern-hollow',role)['token']
+        with TestClient(self.app) as client:
+            headers={'Host':'agents.example.test','Origin':'https://agents.example.test',
+                     'Authorization':'Bearer '+token,'Accept':'application/json, text/event-stream'}
+            initialized=client.post('/mcp',headers=headers,json={'jsonrpc':'2.0','id':1,'method':'initialize',
+                'params':{'protocolVersion':LATEST_PROTOCOL_VERSION,'capabilities':{},
+                          'clientInfo':{'name':'identity-contract-test','version':'1'}}})
+            self.assertEqual(initialized.status_code,200,initialized.text)
+            self.assertIn('result',initialized.json())
+
+    def test_bad_function_type_is_a_client_error(self):
+        self.join_player()
+        for name in ([],{},None):
+            result=self.client.post('/play/action',headers={'X-Lantern-Client':'1'},json={'function':name})
+            self.assertEqual(result.status_code,422)
+
+    def test_version_metadata_has_one_source(self):
+        import tomllib
+        from lantern_hollow import __version__
+        metadata=tomllib.loads((Path(__file__).resolve().parents[1]/'pyproject.toml').read_text())
+        self.assertEqual(metadata['tool']['setuptools']['dynamic']['version']['attr'],'lantern_hollow.__version__')
+        self.assertEqual(self.client.get('/play/map').json()['version'],__version__)
+
     def test_guide_includes_failure_and_wire_format_boundaries(self):
         guide=connection_guide('https://world.test')
         for expected in ('UTF-8','charset=utf-8','Unicode escapes','Authenticated reads','Do NOT reproduce',

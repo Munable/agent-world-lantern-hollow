@@ -57,7 +57,7 @@ def main():
         resume=resumed.value;assert resume.status==200
         assert invitation['identity_token'] not in (resume.request.post_data or '')
         resume_data=resume.json()
-        assert resume_data['mode']=='resume' and resume_data['guide_version']=='4'
+        assert resume_data['mode']=='resume' and resume_data['guide_version']=='5'
         assert all(k not in resume_data for k in ('ticket','role_id','exchange_url','token'))
         resume_template=resume_data['instructions']
         assert '/v1/whoami' in resume_template and '/v1/bootstrap' in resume_template
@@ -77,6 +77,68 @@ def main():
         assert en['instructions'].startswith('Use your currently available tools to GET ')
         expect(page.get_by_label('Private Agent invitation')).to_have_value(en['instructions'])
         report['english_same_contract']=True
+        # A copied key is portable even when the browser has no player cookie.
+        import sqlite3
+        from contextlib import closing
+        def identity_counts():
+            with closing(sqlite3.connect(server.db)) as db:
+                return tuple(db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
+                             for table in ('roles','identity_tokens','join_tickets'))
+        before=identity_counts()
+        fresh=browser.new_context(viewport={'width':390,'height':844},permissions=['clipboard-read','clipboard-write'])
+        visitor=fresh.new_page();visitor.on('pageerror',lambda error:errors.append(str(error)))
+        requests=[]
+        visitor.on('request',lambda r:requests.append((r.url,r.post_data or '')))
+        visitor.goto(server.url+'/watch',wait_until='domcontentloaded')
+        assert visitor.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        visitor.click('#resume-existing')
+        visitor.get_by_label('Saved Agent identity token').fill(invitation['identity_token'])
+        visitor.click('#agent-resume-build')
+        expect(visitor.get_by_label('Private Agent resume')).to_be_visible()
+        assert visitor.get_by_label('Private Agent resume').input_value().endswith(invitation['identity_token'])
+        assert not fresh.cookies()
+        assert identity_counts()==before
+        assert all(invitation['identity_token'] not in url+body for url,body in requests)
+        assert visitor.evaluate('JSON.stringify([localStorage,sessionStorage])').find(invitation['identity_token'])==-1
+        visitor.click('#modal-close')
+        expect(visitor.locator('#modal-body > *')).to_have_count(0)
+        report.update(fresh_browser_resume_without_player=True,resume_no_identity_side_effects=True,
+                      resume_all_requests_without_token=True,closed_modal_clears_private_fields=True)
+
+        # Hold an actual helper request, close it, then open an unrelated dialog.
+        pending=[]
+        visitor.route('**/play/agent/resume',lambda route:pending.append(route))
+        visitor.click('#resume-existing')
+        visitor.get_by_label('Saved Agent identity token').fill(invitation['identity_token'])
+        with visitor.expect_request(lambda r:r.url.endswith('/play/agent/resume')):
+            visitor.click('#agent-resume-build')
+        visitor.click('#modal-close');visitor.click('#help')
+        assert len(pending)==1
+        with visitor.expect_response(lambda r:r.url.endswith('/play/agent/resume')):
+            pending.pop().continue_()
+        visitor.evaluate('() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+        expect(visitor.get_by_label('Private Agent resume')).to_have_count(0)
+        expect(visitor.locator('#modal-title')).to_have_text('慢一点，也没关系')
+        visitor.unroute('**/play/agent/resume')
+        report['late_resume_response_cannot_repopulate_modal']=True
+        fresh.close()
+
+        # The same stale-response boundary applies to first-time issuance.
+        page.click('#modal-close');page.click('#agent')
+        pending=[]
+        page.route('**/play/agent',lambda route:pending.append(route))
+        with page.expect_request(lambda r:r.url.endswith('/play/agent')):
+            page.click('#agent-generate')
+        page.click('#modal-close');page.click('#help')
+        assert len(pending)==1
+        with page.expect_response(lambda r:r.url.endswith('/play/agent')):
+            pending.pop().continue_()
+        page.evaluate('() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+        expect(page.get_by_label('Private Agent identity token')).to_have_count(0)
+        expect(page.get_by_label('Private Agent invitation')).to_have_count(0)
+        expect(page.locator('#modal-title')).to_have_text('No need to hurry')
+        report['late_issue_response_cannot_repopulate_modal']=True
+        page.unroute('**/play/agent')
         assert not errors,errors
         report['page_errors']=errors
         context.close();browser.close()
