@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灯溪镇 · 独立只读查看器</title><link rel="stylesheet" href="observer.css"></head>
+<body><header><h1>灯溪镇 · 独立只读查看器</h1><p>只读取公开事实，不接收身份令牌，不控制角色，不声称模型在线。</p></header>
+<form id="connect"><label>世界地址 <input id="origin" type="url" required placeholder="http://127.0.0.1:8840"></label><button>连接公开世界</button></form>
+<p id="health" role="status">尚未连接</p><svg id="scene" role="img" aria-label="公开地图与旅人" viewBox="0 0 40 26"></svg>
+<section><h2>公开角色状态</h2><div id="roles"></div></section><section><h2>有限保留记录</h2><ol id="events"></ol></section>
+<script type="module" src="observer.js"></script></body></html>

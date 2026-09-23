@@ -1,4 +1,5 @@
 // Original pixel-art renderer. World positions and actions always come from the server.
+import {ServerClock} from './presentation.js';
 const T=16;
 const C={grass:['#4d674c','#4f6a4f','#516d51','#536e51'],deep:'#233d3b',leaf:'#345547',light:'#8ca56c',water:'#294e58',ink:'#202c35',gold:'#e9b76a'};
 function rand(n){let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
@@ -39,11 +40,11 @@ export class VillageRenderer{
  constructor(canvas,map){
   this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;canvas.width=map.width*T;canvas.height=map.height*T;
   this.ctx.imageSmoothingEnabled=false;this.bg=document.createElement('canvas');this.bg.width=canvas.width;this.bg.height=canvas.height;
-  this.atlas=new Map();this.scene=null;this.selfId=null;this.offset=0;this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
+  this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
   this.drawBase();
  }
- update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;if(serverTime)this.offset=serverTime-Date.now()/1000;}
- now(){return Date.now()/1000+this.offset;}
+ update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);}
+ now(){return this.clock.now();}
  getFrame(kind,dir,frame){const key=`${kind}:${dir}:${frame}`;if(!this.atlas.has(key))this.atlas.set(key,sprite(kind,dir,frame));return this.atlas.get(key);}
  actorPosition(a,now=this.now()){
   const m=a?.movement;if(!m)return {x:a?.position?.[0]??18,y:a?.position?.[1]??21,dir:a?.facing||'up',moving:false};

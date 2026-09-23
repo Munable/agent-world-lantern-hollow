@@ -12,6 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LiveServer:
+    def __init__(self, *, observer_origins=()):
+        self.observer_origins=tuple(observer_origins)
+
     def __enter__(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.db = Path(self.tmp.name) / 'test.sqlite3'
@@ -31,8 +34,9 @@ class LiveServer:
 
     def start(self):
         self.proc = subprocess.Popen(
-            [sys.executable, '-u', '-m', 'lantern_hollow.server', '--db', str(self.db), '--port', str(self.port)],
-            stdout=self.log, stderr=subprocess.STDOUT, cwd=ROOT,
+            [sys.executable, '-u', '-m', 'lantern_hollow.server', '--db', str(self.db), '--port', str(self.port),
+             *[value for origin in self.observer_origins for value in ('--observer-origin',origin)]],
+            stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT, cwd=ROOT,
         )
         timeout = min(240, max(30, float(os.getenv('WORLD_TEST_STARTUP_TIMEOUT', '120'))))
         last = 'no response'

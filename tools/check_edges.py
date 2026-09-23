@@ -95,6 +95,10 @@ def main():
         expect(read_page.locator('#welcome')).to_be_hidden(timeout=20000)
         expect(read_page.locator('#say')).to_be_disabled()
         expect(read_page.locator('#agent')).to_be_disabled()
+        # Verify the read-only session has actually loaded before revoking it.
+        # The initially hidden welcome panel alone is not a readiness condition.
+        expect(read_page.locator('#traveler-name')).to_have_text('独立验收旅人',timeout=20000)
+        read_page.wait_for_function("() => !document.body.classList.contains('spectating') && document.querySelector('#watch-health').textContent.includes('已同步')")
         report['readonly_browser_has_no_control_buttons'] = True
         tid = runtime.resolve_identity_token(readonly)['token_id']
         runtime.revoke_identity_token(tid)
