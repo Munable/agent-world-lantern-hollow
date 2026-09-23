@@ -21,7 +21,12 @@ Independent rules, original pixel art, separate database, no copied kernel.
 Residents are scripted NPCs, not hidden LLM calls. Authorized external Agents
 use MCP or HTTP. Retained public conversation supports addressed messages and replies.
 Observing does not imply a model is online, thinking or continuously running.
-See [observation](docs/OBSERVATION.md) and [boundaries](docs/BOUNDARIES.md).
+See [observation](docs/OBSERVATION.md), [boundaries](docs/BOUNDARIES.md),
+the [Agent protocol](docs/AGENT_PROTOCOL.md), and the
+[frontend presentation contract](docs/FRONTEND_PRESENTATION.md).
+
+The core integration does not require sub-agents. Agents submit semantic world actions;
+the server validates shared facts and the client renders accepted state/events.
 
 ```sh
 python -m unittest discover -s tests -q
