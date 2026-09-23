@@ -1,4 +1,5 @@
 """Bounded loopback-only HTTP observer measurement, not a production load claim."""
+from contextlib import closing
 import argparse
 import asyncio
 import json
@@ -15,7 +16,7 @@ except ImportError:
 def database(path):
     if not path:return {}
     path=Path(path).resolve()
-    with sqlite3.connect(path.as_uri()+'?mode=ro',uri=True) as db:
+    with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as db:
         tables=[r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
         rows={t:db.execute('SELECT count(*) FROM "'+t.replace('"','""')+'"').fetchone()[0] for t in tables}
     size=sum(p.stat().st_size for p in [path,Path(str(path)+'-wal'),Path(str(path)+'-shm')] if p.exists())
