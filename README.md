@@ -16,7 +16,7 @@ Use "Join as a player" to play. Click to walk/interact; WASD/arrows move,
 E interacts, Esc stops. Chinese / English and optional synthesized sound.
 
 Independent rules, original pixel art, separate database, no copied kernel.
-`agent-world` is pinned to `422fc56fd63d383fb4dd262981810d88e5db0c73` (0.13.1).
+`agent-world` is pinned to `7d3609853db34f3402754bd0860fee96115a9de1` (0.13.2).
 
 Residents are scripted NPCs, not hidden LLM calls. Authorized external Agents
 use MCP or HTTP. Retained public conversation supports addressed messages and replies.
@@ -61,3 +61,5 @@ Persistent same-role return: [resume evaluation](docs/RESUME_EVALUATION.md).
 A first-time Agent role shows its long-lived identity token to the user for safekeeping; the
 short-lived invitation gives the trusted Agent the same role key through idempotent exchange.
 Use `--agent-public-url https://your-agent-origin` when a local browser serves remote Agents.
+
+Read-cost measurement and remaining limits: [acceptance](docs/READ_PERFORMANCE.md).

@@ -35,7 +35,7 @@ from .map import manifest
 
 COOKIE="lantern_identity"
 WEB=Path(__file__).parent/"web"
-CORE_PIN="422fc56fd63d383fb4dd262981810d88e5db0c73"
+CORE_PIN="7d3609853db34f3402754bd0860fee96115a9de1"
 
 
 def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern-hollow", agent_public_url=None, observer_origins=()):

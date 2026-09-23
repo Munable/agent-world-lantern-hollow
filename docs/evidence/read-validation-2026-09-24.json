@@ -1,0 +1,129 @@
+{
+  "scope": "Local isolated Windows validation; not autonomous model cooperation or production readiness",
+  "core_pin": "7d3609853db34f3402754bd0860fee96115a9de1",
+  "core_foundation_tests": 174,
+  "core_legacy_suites": 12,
+  "core_js_suites": [
+    "view_client",
+    "stream_client"
+  ],
+  "core_ci_run": 35911487209,
+  "core_ci": "all three jobs successful before core PR #2 merge",
+  "lantern_tests": 77,
+  "lantern_checks": [
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 32.83115230000112,
+      "log": "lantern-check-0.log"
+    },
+    {
+      "command": [
+        "node",
+        "tests/camera.test.mjs"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.06312749999051448,
+      "log": "lantern-check-1.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/browser_check.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 46.04498920000333,
+      "log": "lantern-check-2.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_edges.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.742830200004391,
+      "log": "lantern-check-3.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_observation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 17.160868799997843,
+      "log": "lantern-check-4.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_onboarding.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.082674200006295,
+      "log": "lantern-check-5.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_semantic_presentation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.114103100000648,
+      "log": "lantern-check-6.log"
+    },
+    {
+      "command": [
+        "python",
+        "tools/check_camera.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.785437600003206,
+      "log": "lantern-check-7.log"
+    }
+  ],
+  "post_pin_checks": [
+    {
+      "command": [
+        "-m",
+        "unittest",
+        "tests.test_http"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.535223300001235
+    },
+    {
+      "command": [
+        "-m",
+        "pip",
+        "wheel"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.029887400000007
+    },
+    {
+      "command": [
+        "tools/benchmark_observers.py",
+        "--output",
+        "C:\\Users\\MUBIN\\IndustrialWorkbench\\LanternReadPerf_20260924\\evidence\\probe-smoke.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 20.341926199995214
+    }
+  ],
+  "wheel": {
+    "filename": "agent_world_lantern_hollow-0.3.1-py3-none-any.whl",
+    "sha256": "32e3cc5504c23f4cf0f5416afb23e34c0a15608c96192f6389e4a4e5b358d3e2",
+    "server_source_bytes_verified": true,
+    "exact_core_pin_verified": true
+  },
+  "model_canary": "not run; prior execution restriction respected",
+  "lantern_ci": "To be checked independently for the adoption PR"
+}

@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "A small persistent pixel world."
 requires-python = ">=3.11"
 license = "MIT"
-dependencies = ["agent-world @ git+https://github.com/Munable/agent-world.git@422fc56fd63d383fb4dd262981810d88e5db0c73"]
+dependencies = ["agent-world @ git+https://github.com/Munable/agent-world.git@7d3609853db34f3402754bd0860fee96115a9de1"]
 
 [project.scripts]
 lantern-hollow = "lantern_hollow.server:main"
