@@ -35,6 +35,9 @@ python tools/check_observation.py
 Local-first, 32 saved travelers. Keep player cookies for continued access.
 This is one playable prologue, not a full RPG or a public account service.
 
+Agent identity is user-held: [identity contract](docs/IDENTITY.md).
 Client-neutral Agent entry: [guide evaluation](docs/ONBOARDING_EVALUATION.md).
 Persistent same-role return: [resume evaluation](docs/RESUME_EVALUATION.md).
+A first-time Agent role shows its long-lived identity token to the user for safekeeping; the
+short-lived invitation gives the trusted Agent the same role key through idempotent exchange.
 Use `--agent-public-url https://your-agent-origin` when a local browser serves remote Agents.

@@ -23,12 +23,13 @@ class OnboardingPromptTests(unittest.TestCase):
             self.assertIn("https://world.example.test/v1/whoami",text)
             self.assertIn("https://world.example.test/v1/bootstrap",text)
             self.assertNotRegex(text,r"ChatGPT|Claude|Codex|OpenCode|你是|You are")
-        self.assertIn("不要要求用户粘贴凭据",zh)
-        self.assertIn("host-managed authentication",en)
+        self.assertIn("用户提供的本世界身份令牌",zh)
+        self.assertIn("user's identity token",en)
         guide=connection_guide("https://world.example.test")
         self.assertIn("Reading /agent alone is not resumed access",guide)
-        self.assertIn("do NOT ask the user to reveal or paste the credential",guide)
-        self.assertIn("host-managed request helper",guide)
+        self.assertIn("`identity.token` belongs to the user",guide)
+        self.assertIn("wallet recovery key",guide)
+        self.assertIn("optional convenience chosen by the user",guide)
     def test_prompt_is_one_line_and_client_neutral(self):
         for lang in ('zh','en'):
             p=invitation_prompt('https://world.example.test','awjt_example',language=lang)
@@ -49,7 +50,7 @@ class OnboardingPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         self.assertTrue(response.headers['content-type'].startswith('text/plain'))
         self.assertIn('no-store',response.headers['cache-control'])
-        self.assertIn('Guide version: 3',response.text)
+        self.assertIn('Guide version: 4',response.text)
         self.assertIn('https://agents.example.test/v1/bootstrap',response.text)
         self.assertNotIn('awjt_',response.text);self.assertNotIn('awid_',response.text)
         self.assertNotRegex(response.text,r'(?i)if.*(ChatGPT|Claude|Codex|OpenCode|Kimi)')
@@ -59,10 +60,18 @@ class OnboardingPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         invite=response.json()
         self.assertEqual(invite['guide_url'],'https://agents.example.test/agent')
+        self.assertTrue(invite['identity_token'].startswith('awid_'))
         self.assertIn(invite['ticket'],invite['instructions'])
+        self.assertNotIn(invite['identity_token'],invite['instructions'])
         self.assertNotIn('127.0.0.1',invite['instructions'])
         self.assertEqual(invite['instructions'],invitation_prompt('https://agents.example.test',invite['ticket']))
         self.assertEqual(invite['exchange_url'],'https://agents.example.test/v1/join/exchange')
+        exchanged=self.client.post('/v1/join/exchange',json={'ticket':invite['ticket']})
+        self.assertEqual(exchanged.status_code,200,exchanged.text)
+        self.assertEqual(exchanged.json()['identity']['token'],invite['identity_token'])
+        self.assertEqual(exchanged.json()['identity']['role_id'],invite['role_id'])
+        with self.app.state.runtime._conn(readonly=True) as c:
+            self.assertEqual(c.execute('SELECT COUNT(*) FROM identity_tokens WHERE role_id=?',(invite['role_id'],)).fetchone()[0],1)
     def test_english_uses_same_server_generated_contract(self):
         self.join_player()
         r=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'language':'en'})
@@ -75,7 +84,7 @@ class OnboardingPromptTests(unittest.TestCase):
         r=self.client.post('/play/agent/resume',headers={'X-Lantern-Client':'1'},json={'language':'zh'})
         self.assertEqual(r.status_code,200,r.text)
         data=r.json()
-        self.assertEqual(data['mode'],'resume');self.assertEqual(data['guide_version'],'3')
+        self.assertEqual(data['mode'],'resume');self.assertEqual(data['guide_version'],'4')
         self.assertEqual(data['instructions'],resume_prompt('https://agents.example.test'))
         self.assertEqual(data['guide_url'],'https://agents.example.test/agent')
         for forbidden in ('ticket','role_id','exchange_url','token'):self.assertNotIn(forbidden,data)
@@ -96,7 +105,9 @@ class OnboardingPromptTests(unittest.TestCase):
         invite=self.client.post('/play/agent',headers={'X-Lantern-Client':'1'},json={'name':'world guest'}).json()
         exchange=self.client.post('/v1/join/exchange',json={'ticket':invite['ticket']})
         self.assertEqual(exchange.status_code,200,exchange.text)
-        data=exchange.json();headers={'Authorization':'Bearer '+data['identity']['token']}
+        data=exchange.json()
+        self.assertEqual(data['identity']['token'],invite['identity_token'])
+        headers={'Authorization':'Bearer '+data['identity']['token']}
         entered=self.client.post('/v1/functions/town.enter/invoke',headers=headers,json=data['next']['arguments'])
         self.assertEqual(entered.status_code,200,entered.text)
         self.assertTrue(entered.json()['result']['entered'])
@@ -112,14 +123,18 @@ class OnboardingPromptTests(unittest.TestCase):
     def test_html_uses_server_instructions_not_a_second_hardcoded_prompt(self):
         js=(Path(__file__).resolve().parents[1]/'lantern_hollow/web/app.js').read_text(encoding='utf-8')
         self.assertIn("showInstructions(r.instructions,'Private Agent invitation')",js)
+        self.assertIn("showIdentityKey(r.identity_token)",js)
         self.assertIn("request('/play/agent/resume'",js)
-        self.assertIn("showInstructions(r.instructions,'Private Agent resume')",js)
+        self.assertIn("Identity token: ')+token",js)
+        self.assertNotIn("data:{language:lang,token",js)
+        self.assertNotIn('localStorage.setItem(\'agent',js)
         self.assertNotIn('Ask the human to configure the connector',js)
     def test_guide_includes_failure_and_wire_format_boundaries(self):
         guide=connection_guide('https://world.test')
-        for expected in ('UTF-8','charset=utf-8','Unicode escapes','including GET reads','Do NOT recount','Expired ticket',
+        for expected in ('UTF-8','charset=utf-8','Unicode escapes','Authenticated reads','Do NOT reproduce',
                          'read-only URL','do NOT stop to install/configure MCP','Reading /agent alone is not resumed access',
-                         'do NOT ask the user to reveal or paste the credential','host-managed request helper'):
+                         '`identity.token` belongs to the user','wallet recovery key','same identity token',
+                         'Do not mint another role','saved role key is required'):
             self.assertIn(expected,guide)
 
 if __name__=='__main__':unittest.main()

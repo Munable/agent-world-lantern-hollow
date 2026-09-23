@@ -146,7 +146,7 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
         return FileResponse(str(files('agent_world').joinpath('web','stream-client.js')),media_type='text/javascript')
 
     @ui.get("/play/map")
-    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.2"}
+    def get_map(): return {**manifest(),"core_pin":CORE_PIN,"version":"0.2.3"}
 
     @ui.post("/play/join")
     async def join(request:Request):
@@ -239,7 +239,12 @@ def create_app(db_path, *, public_url="http://127.0.0.1:8840", universe="lantern
                 if info["access_mode"]=="observe":raise PermissionDenied("Observers cannot create control invitations")
                 role=runtime.create_role(name.strip())
                 ticket=runtime.issue_join_ticket(universe,role["role_id"],ttl_seconds=600)
+                # Exchange once on behalf of the website so the user can save the
+                # exact long-lived role key. The Agent may exchange the same ticket
+                # later and will receive this same deterministic token, not a second key.
+                claimed=runtime.exchange_join_ticket(ticket["ticket"],expected_universe=universe)
                 return {"role_id":role["role_id"],"expires_at":ticket["expires_at"],"ticket":ticket["ticket"],
+                        "identity_token":claimed["token"],
                         "mcp_url":agent_origin+"/mcp","exchange_url":agent_origin+"/v1/join/exchange",
                         "guide_url":agent_origin+"/agent","guide_version":GUIDE_VERSION,
                         "instructions":invitation_prompt(agent_origin,ticket["ticket"],language=language)}

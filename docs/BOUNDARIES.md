@@ -20,7 +20,10 @@
   header and validate Origin; native Agent routes use Bearer authentication instead.
   There is no public registration moderation, full account recovery, or deployment security audit.
 - Browser stores only language/completion flags and a pending public intent envelope, never
-  identity secrets. Uncertain Actions reuse their original operation ID after receipt lookup.
+  Agent identity secrets. A newly created Agent identity token may be displayed transiently so the
+  user can save it, but it is not written to localStorage. Resume tokens are pasted client-side to
+  build private Agent instructions and are not sent to the resume helper endpoint.
+  Uncertain Actions reuse their original operation ID after receipt lookup.
 - Tests use deterministic clients, not a claim that an autonomous LLM played the quest.
 
 - Shared public village history retains 24 hours / 4096 records, conversation 24 hours / 2048.

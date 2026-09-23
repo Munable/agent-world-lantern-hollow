@@ -1,64 +1,76 @@
 # Persistent identity resume evaluation
 
-Date: 2026-09-23. Source baseline: `4e9414f`.
+Date: 2026-09-23. Original onboarding baseline: `4e9414f`.
 
 This evaluation checks a different property from first-time onboarding: a later, fresh Agent
-session must continue the same world role without asking the user to paste a credential and
-without minting another role.
+session must continue the same world role without minting another role.
 
-## Test shape
+The product identity rule is defined separately in [IDENTITY.md](IDENTITY.md): the long-lived
+identity token belongs to the user. An Agent host is an executor, not the owner of the role key.
 
-A fresh Lantern Hollow database contained one role that had already entered the town. The host
-kept that role's private identity outside model context. For saved-identity cases, the generic
-HTTP tool applied authentication internally; the model never received the token in its new
-session. For the missing-identity case, the same tool had no saved authentication.
+## What the earlier host-managed experiment proved
 
-A successful resume required real evidence in this order:
+An intermediate guide-v3 experiment kept one role token outside model context and let a generic
+HTTP helper apply it automatically. GPT-OSS runs successfully verified `/v1/whoami` and
+`/v1/bootstrap` against the same role without increasing the role count.
 
-1. GET `/agent`.
-2. GET `/v1/whoami` with status 200.
-3. GET `/v1/bootstrap` with status 200.
-4. The returned role stayed the original role and the total role count did not increase.
+That experiment proved a useful transport property: a trusted host can use a user-authorized
+stored copy without exposing the token to model text. It did **not** establish host storage as the
+identity ownership model. Treating host persistence as the required resume path was an
+interpretation error and is corrected in guide version 4.
 
-Reading `/agent` alone was explicitly not counted as resumed access.
+## Guide-v4 resume contract
 
-## Observed failure in guide version 2
+The normal resume path is:
 
-With the earlier resume wording, GPT-OSS-20B stopped after reading `/agent` and reported success
-without validating identity. GPT-OSS-120B instead asked the user to paste a Bearer token even
-though the host advertised that a saved private identity was available.
+1. The user chooses an existing role and supplies their saved `awid_...` identity token to the
+   Agent they trust.
+2. The Agent reads `/agent`.
+3. The Agent authenticates with that token and GETs `/v1/whoami`.
+4. The Agent GETs `/v1/bootstrap` and continues the same role.
+5. The role ID must remain unchanged and no new role may be created.
 
-That behavior motivated guide version 3 and a more explicit one-line resume instruction:
-use host/tool-managed identity, verify `/v1/whoami`, then read `/v1/bootstrap`.
+Reading `/agent` alone is not resumed access. If the user cannot provide the saved role key and
+no trusted client has a user-authorized copy, the Agent must report that the role cannot be
+resumed. It must not silently create a replacement role.
 
-## Candidate results
+## Browser product path in 0.2.3
 
-| Case | Result |
-|---|---|
-| GPT-OSS-20B, saved host identity | `/whoami` 200, `/bootstrap` 200, same role, no new role |
-| GPT-OSS-120B, saved host identity | `/whoami` 200, `/bootstrap` 200, same role, no new role |
-| GPT-OSS-20B, no saved identity | `/whoami` 401, stopped, no exchange, no new role |
-| GPT-OSS-120B, first-time invitation with guide v3 | exchanged invitation and committed `town.enter` |
+The browser's first-time Agent flow now exposes two distinct values:
 
-The two saved-identity runs hit provider timeout/429 only after the required resume evidence was
-already complete. The first-time regression likewise entered before a later provider 429.
-Those provider failures are not classified as world or resume-protocol failures.
+- a 10-minute `awjt_...` invitation for the Agent;
+- the long-lived `awid_...` identity token for the user to save.
 
-## What this proves and does not prove
+The website immediately exchanges its own new ticket once so it can show the durable role key to
+the user. Join-ticket exchange is deterministic and replay-safe, so when the invited Agent later
+exchanges that same still-valid ticket it receives the exact same long-lived token. No second role
+key is created.
 
-The world protocol can resume a role without exposing its credential to model text when the host
-provides secure credential persistence or an authenticated request helper. Credential storage is
-a host responsibility; Lantern Hollow does not claim that arbitrary chat applications persist
-secrets across sessions.
+The “Continue an existing Agent” UI asks the user to paste their saved token locally. JavaScript
+combines that token with the server-generated credential-free resume instruction. The token is
+not included in the POST to `/play/agent/resume` and is not persisted to localStorage.
 
-This is a small development-time FreeAPI black-box sample, not a population success rate and not
-validation of every consumer AI application. Model/provider availability changed during the run.
-No real production-world identity was used, and temporary test credentials/databases were removed
-after validation.
+The resume helper endpoint itself remains credential-free and never creates a role, ticket, or
+identity. Its purpose is only to provide the current versioned resume instruction.
 
-## Product path in 0.2.2
+## Security boundary
 
-The browser now exposes a separate “Continue an existing Agent” path. POST `/play/agent/resume`
-returns only the versioned resume instruction and guide URL. It does not create a role, issue a
-join ticket, return an identity token, or expose an exchange URL. First-time `/play/agent` remains
-the only browser helper that creates a new Agent role and invitation.
+The normal final Agent report must not reproduce the identity token, token ID, token fragments,
+Authorization header, join ticket, or raw authentication payload. A host that offers secure
+credential persistence may be used when the user explicitly chooses it, but that is optional
+convenience rather than a protocol dependency.
+
+This reference product does not claim full public account recovery. Losing the only saved
+long-lived role key means this example has no password-reset-style way to recover the role.
+Runtime revocation/rotation primitives exist, but a complete public recovery UI is out of scope.
+
+## Evidence limits
+
+The host-managed black-box samples were small development-time FreeAPI experiments and provider
+availability changed during the runs. They are not a population success rate or validation of
+every consumer Agent application.
+
+Guide-v4 ownership semantics are enforced by deterministic HTTP/browser regression tests: the
+website-visible long-lived token must equal the token returned when the invited Agent exchanges
+the same ticket; resume does not mint another identity; and browser resume composition must not
+send or persist the user-entered token.
