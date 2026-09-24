@@ -1,6 +1,8 @@
+import {validateMap,nextView,ViewContractError} from './view-contract.js';
+import {localPrefs,tabState} from './browser-storage.js';
 import {placeBubble} from './ui-layout.js';
 import {loadSampleAssets} from './assets.js';
-import {VillageRenderer} from './render.js?v=0.4.1';
+import {VillageRenderer} from './render.js?v=0.5.0';
 import {bindCameraInput} from './camera.js?v=0.3.0';
 import {bubbleFromEvent,cueSource} from './presentation.js';
 import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.1';
@@ -11,9 +13,9 @@ const words={
 words.resumeAccess=['角色续接','Resume Agent'];
 words.observer=['只读观察 · 不能控制角色','Observer · control disabled'];
 words.speechHint=['这句话会显示在公开频道，所有获准旁观者都可以读取。它不是永久留言，也不要包含隐私或密钥。','This is public speech, not a permanent note. Do not include private information or keys.'];
-let lang=localStorage.getItem('lh.lang')||'zh';
+let lang=localPrefs.getItem('lh.lang')||'zh';
 function tr(key){return words[key]?.[lang==='zh'?0:1]||key;}
-function text(el,value){el.textContent=value;}
+function text(el,value){if(el.textContent!==String(value))el.textContent=value;}
 function translate(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';$$('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(key==='welcomeTitle'){el.replaceChildren(...tr(key).split('<br>').flatMap((s,i)=>i?[document.createElement('br'),document.createTextNode(s)]:[document.createTextNode(s)]));}else text(el,tr(key));});$('#name').placeholder=tr('yourName');$('#language').textContent=lang==='zh'?'EN':'中文';updateUI(true);}
 let renderer,map,view=null,roleId=null,eventCursor=0,working=false,polling=false,pollTimer=null,lastSuccess=0,selected=null,toastTimer,notedAt=0,dialogueStamp='',completionShown=false;
 let generation=0,canControl=false,appearance='traveler';
@@ -22,11 +24,11 @@ const ledger=new EventLedger(600),bubbleQueue=new BubbleQueue();
 let rosterSignature='',timelineSignature='',filterKind='all';
 const focusKey='lh.public-focus';
 const validRole=id=>typeof id==='string'&&/^awr_[A-Za-z0-9_-]{1,120}$/.test(id);
-let preferredRole=localStorage.getItem(focusKey)||null;
+let preferredRole=localPrefs.getItem(focusKey)||null;
 if(!validRole(preferredRole))preferredRole=null;
 const linkedRole=new URLSearchParams(location.search).get('role');
 if(validRole(linkedRole)){
- preferredRole=linkedRole;localStorage.setItem(focusKey,linkedRole);
+ preferredRole=linkedRole;localPrefs.setItem(focusKey,linkedRole);
  const clean=new URL(location.href);clean.searchParams.delete('role');
  history.replaceState(null,'',clean.pathname+clean.search+clean.hash);
 }
@@ -49,7 +51,7 @@ function updateFocusStatus(){
   renderer.portrait($('#portrait'),a?.appearance||'traveler');
  }
 }
-function rememberRole(id){if(!validRole(id))return false;preferredRole=id;localStorage.setItem(focusKey,id);return true;}
+function rememberRole(id){if(!validRole(id))return false;preferredRole=id;localPrefs.setItem(focusKey,id);if(!localPrefs.persistent)toast(lang==='zh'?'浏览器未保存偏好，本页暂时关注；刷新后请重新选择。':'Preferences are unavailable; focus lasts for this page only.');return true;}
 function watchRoleDialog(){
  modal(lang==='zh'?'关注已有角色':'Watch an existing role');
  paragraph(lang==='zh'?'只需要公开角色 ID，不要填写身份令牌。关注不会取得控制权或私人任务。':'Use a public role ID, never an identity token. Watching grants no control or private data.');
@@ -64,7 +66,7 @@ function watchRoleDialog(){
 
 function selectRole(id){focusedRole=id;renderer.focusRole=id||roleId;followCameraRole(id||roleId);updateLiveUI(true);}
 function focusPublicRole(id){
- if(id){if(!rememberRole(id))return;}else{preferredRole=null;localStorage.removeItem(focusKey);}
+ if(id){if(!rememberRole(id))return;}else{preferredRole=null;localPrefs.removeItem(focusKey);}
  selectRole(id);
 }
 
@@ -78,12 +80,13 @@ async function request(path,{method='GET',data}={}){
 }
 function connected(value){$('#connection').classList.toggle('offline',!value);text($('#connection span'),(view?(value?(lang==='zh'?'已同步世界 · '+(mode==='spectate'?'只读观战':'玩家'):'World synchronized · '+mode):tr('offline')):(value?tr('connecting'):(lang==='zh'?'连接失败 · 请重试':'Connection failed · retry'))));if(renderer)renderer.connected=value;if(value)$('#connection-problem').hidden=true;}
 function apply(update){
- if(update.kind==='snapshot'){view={...update,snapshot:structuredClone(update.snapshot)};}
- else if(view?.cursor===update.base_cursor){const snap=structuredClone(view.snapshot);for(const section of ['entities','resources']){snap[section]??={};for(const key of update.delta[section].remove)delete snap[section][key];for(const [key,val]of Object.entries(update.delta[section].upsert)){Object.defineProperty(snap[section],key,{value:val,enumerable:true,writable:true,configurable:true});}}snap.meta=update.delta.meta;view={...update,snapshot:snap};}
- else throw new Error('View cursor mismatch');
+ view=nextView(view,update,roleId,map);
  renderer.update(view.snapshot,roleId,update.observed_at);renderer.focusRole=focusedRole||roleId;lastSuccess=Date.now();connected(true);updateUI();updateLiveUI();
 }
+let localHistoryLimited=false;
 function absorbFeed(result, initial=false){
+ if(initial)localHistoryLimited=false;
+ if(ledger.byId.size+result.events.filter(e=>!ledger.byId.has(e.event_id)).length>ledger.limit)localHistoryLimited=true;
  streamCursor=result.stream_cursor;
  if(initial||!historyCursor){historyCursor=result.history_cursor;historyAvailable=result.has_older;}
  feedGap=feedGap||!!result.gap||!!result.history_truncated;
@@ -107,13 +110,13 @@ function absorbFeed(result, initial=false){
 function setMode(next){
  mode=next;document.body.classList.toggle('spectating',next==='spectate');
  $('#join-mode').hidden=next!=='spectate';$('#watch-mode').hidden=next==='spectate';
- rosterSignature='';timelineSignature='';
+ rosterSignature='';timelineSignature='';$('#world').setAttribute('aria-label',next==='spectate'?(lang==='zh'?'公开场景，只读。可通过名单选择角色。':'Read-only world. Use the roster to select a role.'):(lang==='zh'?'游戏场景。方向键移动，E 互动；任务和角色也可通过按钮选择。':'Game scene. Arrow keys move and E interacts; tasks and roles also have buttons.'));
 }
 async function openSession(){
  const g=++generation;clearTimeout(pollTimer);
  const result=await request('/play/session');if(g!==generation)return;
  ledger.clear();bubbleQueue.clear();historyCursor=null;feedGap=false;
- setMode('play');roleId=result.role_id;canControl=result.access_mode!=='observe';eventCursor=result.event_cursor;
+ setMode('play');if(location.pathname!=='/')history.replaceState(null,'','/');roleId=result.role_id;canControl=result.access_mode!=='observe';eventCursor=result.event_cursor;
  apply(result.view);absorbFeed(result,true);$('#welcome').hidden=true;
  $$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=!canControl);
  followHome();if(canControl)await recoverPending();else text($('#activity-label'),tr('observer'));schedulePoll(150);
@@ -122,7 +125,7 @@ async function openWatch(){
  const g=++generation;clearTimeout(pollTimer);
  const result=await request('/watch/session');if(g!==generation)return;
  ledger.clear();bubbleQueue.clear();historyCursor=null;feedGap=false;
- setMode('spectate');roleId=null;canControl=false;
+ setMode('spectate');if(location.pathname!=='/watch')history.replaceState(null,'','/watch');roleId=null;canControl=false;
  apply(result.view);absorbFeed(result,true);$('#welcome').hidden=true;$('#completion').hidden=true;
  $$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);followHome();schedulePoll(150);
 }
@@ -135,20 +138,21 @@ async function poll(){
  }catch(err){
   if(g!==generation)return;connected(false);updateLiveUI();
   if(err.status===401||err.status===403){clearSession();toast(tr('loggedOut'));}
+  else if(err instanceof ViewContractError){try{if(mode==='play')await openSession();else await openWatch();}catch{showConnectionProblem(err);schedulePoll(1500);}}
   else schedulePoll(1500);
  }finally{polling=false;}
 }
 async function recoverPending(){
- let pending;try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null');}catch{sessionStorage.removeItem(pendingKey);return;}
- if(!pending||pending.role_id!==roleId){sessionStorage.removeItem(pendingKey);return;}
- try{await request('/play/receipt/'+encodeURIComponent(pending.operation_id));sessionStorage.removeItem(pendingKey);toast(tr('recovered'));}
+ let pending;try{pending=JSON.parse(tabState.getItem(pendingKey)||'null');}catch{tabState.removeItem(pendingKey);return;}
+ if(!pending||pending.role_id!==roleId){tabState.removeItem(pendingKey);return;}
+ try{await request('/play/receipt/'+encodeURIComponent(pending.operation_id));tabState.removeItem(pendingKey);toast(tr('recovered'));}
  catch(e){if(e.status===404){await sendIntent(pending);}else throw e;}
 }
 async function sendIntent(intent){
- try{const result=await request('/play/action',{method:'POST',data:intent});sessionStorage.removeItem(pendingKey);return result;}
- catch(err){if(err instanceof RequestError&&err.status<500){sessionStorage.removeItem(pendingKey);throw err;}
+ try{const result=await request('/play/action',{method:'POST',data:intent});tabState.removeItem(pendingKey);return result;}
+ catch(err){if(err instanceof RequestError&&err.status<500){tabState.removeItem(pendingKey);throw err;}
   toast(tr('uncertain'));
-  try{const result=await request('/play/receipt/'+encodeURIComponent(intent.operation_id));sessionStorage.removeItem(pendingKey);return result;}catch{}
+  try{const result=await request('/play/receipt/'+encodeURIComponent(intent.operation_id));tabState.removeItem(pendingKey);return result;}catch{}
   throw err;
  }
 }
@@ -158,10 +162,10 @@ async function act(name,args={}){
  if(working)return null;
  working=true;const g=generation;
  try{
-  if(sessionStorage.getItem(pendingKey)){try{await recoverPending();}catch{toast(tr('uncertain'));return null;}}
+  if(tabState.getItem(pendingKey)){try{await recoverPending();}catch{toast(tr('uncertain'));return null;}}
   if(g!==generation)return null;
   const intent={function:name,arguments:args,operation_id:'ui-'+crypto.randomUUID(),role_id:roleId};
-  sessionStorage.setItem(pendingKey,JSON.stringify(intent));
+  tabState.setItem(pendingKey,JSON.stringify(intent));if(!tabState.persistent)toast(lang==='zh'?'待确认操作只保存在本页，结果明确前请勿关闭。':'The pending action is held in this page only. Keep it open until confirmed.');
   const result=await sendIntent(intent);if(g===generation)schedulePoll(50);return result;
  }catch(e){toast(e.message||tr('failed'));return null;}finally{working=false;}
 }
@@ -182,7 +186,7 @@ function updateUI(force=false){
   text($('#quest-action-text'),tr(stage==='arrival'?'findKeeper':stage==='collect'?'findShard':stage==='repair'?'repair':'visitBoard'));
   const notes=meta?.notes||[];$('#notes').replaceChildren();if(!notes.length){const p=document.createElement('p');p.textContent=tr('emptyNotes');$('#notes').append(p);}else for(const item of notes.slice(-3).reverse()){const p=document.createElement('p'),cite=document.createElement('cite');p.textContent=item.text;cite.textContent='— '+item.name;p.append(cite);$('#notes').append(p);}
  }
- if(me?.quest==='complete'&&!completionShown){completionShown=true;const flag='lh.complete.'+roleId;if(!localStorage.getItem(flag)){$('#completion').hidden=false;localStorage.setItem(flag,'1');sound('finish');}}
+ if(me?.quest==='complete'&&!completionShown){completionShown=true;const flag='lh.complete.'+roleId;if(!localPrefs.getItem(flag)){$('#completion').hidden=false;localPrefs.setItem(flag,'1');sound('finish');}}
  if(me&&!me.movement&&!me.busy&&selected&&Date.now()-notedAt<20000&&selected==='board'&&distance(me.position,map.targets.find(t=>t.id==='board').approach)<=1){notedAt=0;showComposer('note');}
 }
 
@@ -218,7 +222,7 @@ function updateLiveUI(force=false){
  const ok=renderer.connected && Date.now()-lastSuccess<6000;
  $('#watch-health').classList.toggle('stale',!ok);
  text($('#watch-health'),(ok?(zh?'已同步':'Synchronized'):(zh?'连接中断，正在重连':'Disconnected; reconnecting'))+' · '+localClock(lastSuccess/1000));
- text($('#history-notice'),feedGap?(zh?'部分早期记录已到保留期限。历史不会伪装成正在发生。':'Some older records expired. History is not played as live activity.'):(zh?'最近记录可回看；公开打算不等于模型内部思考。':'Retained history is available. Public intention is not private reasoning.'));
+ text($('#history-notice'),localHistoryLimited?(zh?'本页仅保留最近 600 条记录；更早内容不在当前缓存中。':'This page keeps the latest 600 records; earlier content is not in its buffer.'):feedGap?(zh?'部分早期记录已到保留期限。历史不会伪装成正在发生。':'Some older records expired. History is not played as live activity.'):(zh?'最近记录可回看；公开打算不等于模型内部思考。':'Retained history is available. Public intention is not private reasoning.'));
  $('#load-history').hidden=!historyAvailable||ledger.byId.size>=ledger.limit;
  const signature=JSON.stringify([actors,focusedRole,lang]);
  if(force||signature!==rosterSignature){
@@ -303,8 +307,9 @@ function renderBubbles(){
  const now=renderer.now(),shown=bubbleQueue.active(now);
  renderer.speaking=new Set(shown.filter(c=>c.channel==='speech').map(c=>c.subject));
  const stamp=JSON.stringify(shown.map(c=>[c.id,lang]));
- if(stamp!==dialogueStamp){dialogueStamp=stamp;$('#bubbles').replaceChildren();for(const c of shown){
-  const el=document.createElement('div');el.className='bubble'+(c.channel==='intent'?' intent':'');el.dataset.subject=c.subject;
+ if(stamp!==dialogueStamp){dialogueStamp=stamp;const keep=new Set(shown.map(c=>c.id));for(const node of $$('#bubbles .bubble'))if(!keep.has(node.dataset.cueId))node.remove();for(const c of shown){
+  const retained=$$('#bubbles .bubble').find(node=>node.dataset.cueId===c.id);if(retained&&retained.dataset.language===lang)continue;if(retained)retained.remove();
+  const el=document.createElement('div');el.dataset.cueId=c.id;el.dataset.language=lang;el.className='bubble'+(c.channel==='intent'?' intent':'');el.dataset.subject=c.subject;
   const name=document.createElement('strong'),msg=document.createElement('span'),accessible=document.createElement('span');
   const actor=view.snapshot.entities[c.subject],npc=map.targets.find(t=>t.id===c.subject);
   el.dataset.source=c.source;
@@ -366,7 +371,7 @@ $('#say').onclick=()=>showComposer('say');$('#intent').onclick=()=>showComposer(
 $('#stop').onclick=()=>{selected=null;renderer.target=null;act('town.stop');};
 $('#modal-close').onclick=()=>$('#modal').close();$('#modal').addEventListener('click',e=>{if(e.target===$('#modal')){const r=$('#modal').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#modal').close();}});
 $('#help').onclick=()=>{modal(tr('helpTitle'));paragraph(tr('helpBody'));const keys=document.createElement('div');keys.className='keys';for(const [key,label]of [[tr('keysMove'),'moveHelp'],['E','interactHelp'],['ESC','stopHelp']]){const k=document.createElement('kbd'),v=document.createElement('span');k.textContent=key;v.textContent=tr(label);keys.append(k,v);}$('#modal-body').append(keys);paragraph(tr('helpSave'));paragraph(tr('helpNpc'),'small');};
-$('#language').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('lh.lang',lang);translate();connected(lastSuccess?Date.now()-lastSuccess<5000:true);updateLiveUI(true);};
+$('#language').onclick=()=>{lang=lang==='zh'?'en':'zh';localPrefs.setItem('lh.lang',lang);translate();connected(lastSuccess?Date.now()-lastSuccess<5000:true);updateLiveUI(true);};
 $('#journal-toggle').onclick=()=>{$('#journal').classList.toggle('open');if($('#journal').classList.contains('open'))$('#journal').scrollIntoView({behavior:'smooth',block:'start'});};
 $('#board').onclick=()=>goTo('board');
 $('#quest-action').onclick=()=>{const me=view?.snapshot.meta.self;if(!me)return;const stage=me.quest;goTo(stage==='arrival'?'elia':stage==='collect'?['shard_moss','shard_sky','shard_water'].find(id=>!me.shards.includes(id)):stage==='repair'?'beacon':'board');};
@@ -455,7 +460,7 @@ let blocked=new Set();
 function hit(e){const r=$('#world').getBoundingClientRect(),p=renderer.camera.unproject((e.clientX-r.left)/r.width*renderer.canvas.width,(e.clientY-r.top)/r.height*renderer.canvas.height);return {x:p.x/16,y:p.y/16};}
 function hitTarget(pos){return map.targets.find(t=>Math.abs(pos.x-(t.x+.5))<.9&&pos.y>t.y-.9&&pos.y<t.y+1.2)||(pos.x>=32&&pos.x<=36&&pos.y>=2&&pos.y<=10?map.targets.find(t=>t.id==='beacon'):null);}
 async function prepareSampleAssets(){
- const status=document.createElement('a');status.href='/static/art-gallery.html';status.target='_blank';status.rel='noopener';status.id='asset-status';status.setAttribute('role','status');status.dataset.state='loading';status.textContent='素材加载中 / Loading art';$('#camera-status').after(status);
+ const status=document.createElement('a');status.href='/static/art-gallery.html';status.target='_blank';status.rel='noopener';status.id='asset-status';status.setAttribute('aria-label','素材预览 / Sample artwork');status.dataset.state='loading';status.textContent='素材加载中 / Loading art';$('#camera-status').after(status);
  try{const pack=await loadSampleAssets();renderer.useAssets(pack);status.dataset.state='ready';status.textContent='示例素材 / Sample art';status.title=pack.manifest.version;renderer.portrait($('#portrait'),view?.snapshot?.entities?.[preferredRole]?.appearance||view?.snapshot?.meta?.self?.appearance||'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));}
  catch(error){status.dataset.state='fallback';status.textContent='素材不可用，使用基础图形 / Basic art';status.title=String(error.message).slice(0,120);}
 }
@@ -466,14 +471,17 @@ function showConnectionProblem(error){
 $('#retry-world').onclick=()=>location.reload();
 $('#speech-overflow').onclick=()=>{filterKind='speech';$('#event-filter').value='speech';$('#journal').classList.add('open');updateLiveUI(true);$('#timeline').scrollIntoView({block:'center',behavior:renderer?.reduced?'auto':'smooth'});};
 async function boot(){
- setMode('spectate');translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);prepareSampleAssets();bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
+ setMode('spectate');translate();try{map=validateMap(await request('/play/map'));blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);prepareSampleAssets();bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
  $('#world').addEventListener('pointermove',e=>{const p=hit(e),target=hitTarget(p);renderer.hover=[Math.floor(p.x),Math.floor(p.y)];renderer.target=target?.id||selected;$('#world').style.cursor=target?'pointer':blocked.has(renderer.hover.join(','))?'not-allowed':'crosshair';const label=$('#hover-label');label.hidden=!target;if(target){text(label,targetName(target));const wrap=$('#canvas-wrap').getBoundingClientRect(),r=$('#world').getBoundingClientRect();const anchor=renderer.project(target.x,target.y);label.style.left=((r.left-wrap.left+anchor.x/100*r.width)/wrap.width*100)+'%';label.style.top=((r.top-wrap.top+anchor.y/100*r.height)/wrap.height*100)+'%';}});
  $('#world').addEventListener('pointerleave',()=>{renderer.hover=null;renderer.target=selected;$('#hover-label').hidden=true;});
- $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=renderer.hitTraveler(p);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});
- try{if(location.pathname==='/watch'||preferredRole)await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);showConnectionProblem(e);}}
+ $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=renderer.hitTraveler(p);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});
+ try{if(location.pathname==='/watch')await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);showConnectionProblem(e);}}
  $$('#join-mode,#follow-agent,#zoom-out,#zoom-in,#overview').forEach(el=>el.disabled=false);
  }catch(e){showConnectionProblem(e);connected(false);}
 }
-window.addEventListener('keydown',e=>{if(!canControl||!view?.snapshot.meta.self||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName)||$('#modal').open)return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){e.preventDefault();held.add(k);}if(k==='Escape'){selected=null;if(renderer)renderer.target=null;if(!$('#completion').hidden){$('#completion').hidden=true;$('#world').focus();return;}if(roleId)act('town.stop');}if(k==='e'&&!e.repeat&&view){const p=renderer.actorPosition(view.snapshot.meta.self);const nearest=[...map.targets].sort((a,b)=>distance([p.x,p.y],a.approach)-distance([p.x,p.y],b.approach))[0];goTo(nearest.id);}});
+window.addEventListener('keydown',e=>{if(e.isComposing||e.keyCode===229)return;if(!canControl||!view?.snapshot.meta.self||(document.activeElement?.isContentEditable||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName))||$('#modal').open)return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){e.preventDefault();held.add(k);}if(k==='Escape'){selected=null;if(renderer)renderer.target=null;if(!$('#completion').hidden){$('#completion').hidden=true;$('#world').focus();return;}if(roleId)act('town.stop');}if(k==='e'&&!e.repeat&&view){const p=renderer.actorPosition(view.snapshot.meta.self);const nearest=[...map.targets].sort((a,b)=>distance([p.x,p.y],a.approach)-distance([p.x,p.y],b.approach))[0];goTo(nearest.id);}});
 window.addEventListener('keyup',e=>held.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>held.clear());window.addEventListener('offline',()=>{connected(false);updateLiveUI();});window.addEventListener('online',()=>{if(view)schedulePoll(1);});document.addEventListener('visibilitychange',()=>{held.clear();if(!document.hidden&&view)schedulePoll(1);});
 boot();
+
+// Aggregate diagnostics only: no tokens, texts, private state or control surface.
+export function frontendDiagnostics(){return {events:ledger.byId.size,pending:bubbleQueue.pending.length,showing:bubbleQueue.showing.size,seen:bubbleQueue.seen.size,particles:renderer?.particles.length||0,assetFrames:renderer?.assets?.cache.size||0,roles:view?Object.keys(view.snapshot.entities).length:0,polling,mode,localPreferencePersistence:localPrefs.persistent,pendingPersistence:tabState.persistent,localHistoryLimited,audioEnabled:audioOn,audioState:audioCtx?.state||'off'};}

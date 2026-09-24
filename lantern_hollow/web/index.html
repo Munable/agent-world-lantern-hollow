@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css?v=0.4.1">
+  <link rel="stylesheet" href="/static/style.css?v=0.5.0">
 </head>
 <body>
 <header class="masthead">
@@ -16,7 +16,7 @@
  <div class="world-layout">
   <section class="world-frame" aria-label="Interactive village">
    <div class="world-top"><div class="location"><span class="small-diamond">◆</span> <span data-i18n="location">灯溪镇 · 溪岸</span><small data-i18n="evening">一个缓慢的黄昏</small></div><div class="connection" id="connection" role="status"><i></i><span data-i18n="connecting">连接世界</span></div></div>
-   <div class="camera-bar" aria-label="View controls">
+   <div class="camera-bar" role="group" aria-label="View controls">
     <span id="camera-status" role="status">自由观察</span>
     <button id="follow-agent" disabled type="button">关注角色</button>
     <button id="return-role" type="button" disabled>回到关注角色</button>
@@ -44,13 +44,13 @@
   <aside class="journal" id="journal">
    <section class="live-panel" aria-label="Live world observation">
     <div class="section-title"><h2 id="live-title">世界现场</h2><span id="traveler-count">0</span></div>
-    <p class="small" id="watch-health" role="status">正在读取服务器…</p>
+    <p class="small" id="watch-health" aria-live="off">正在读取服务器…</p>
     <p class="small" id="presence-boundary">角色存在不代表模型持续在线</p>
     <p id="focus-status" class="small"></p><button id="focus-clear" class="text-button" hidden>取消关注</button>
     <div id="travelers" class="travelers"></div>
     <div class="section-title"><h3 id="timeline-title">事件与对话</h3><select id="event-filter" aria-label="Filter events"><option value="all">全部</option><option value="speech">对话</option><option value="action">动作</option></select></div>
     <p id="history-notice" class="small">历史记录不作为正在发生的动画播放。</p>
-    <ol id="timeline" class="timeline" aria-label="World timeline"></ol><button id="timeline-new" type="button" hidden>有新记录 · 到最新</button>
+    <ol id="timeline" tabindex="0" class="timeline" aria-label="World timeline"></ol><button id="timeline-new" type="button" hidden>有新记录 · 到最新</button>
     <button id="load-history" class="text-button" hidden>读取更早记录</button>
     <section class="public-notes-panel"><div class="section-title"><h3 id="public-notes-title">旅人留下的话</h3></div><div id="public-notes" class="notes"></div></section>
    </section>
@@ -68,7 +68,7 @@
    <div class="residents"><button data-target="elia"><canvas data-portrait="keeper"></canvas><span data-i18n="elia">艾莉娅</span><small data-i18n="keeper">守灯人</small></button><button data-target="rowan"><canvas data-portrait="smith"></canvas><span data-i18n="rowan">罗温</span><small data-i18n="smith">匠人</small></button><button data-target="fern"><canvas data-portrait="gardener"></canvas><span data-i18n="fern">芙恩</span><small data-i18n="gardener">花匠</small></button></div>
    <div class="rule"></div>
    <div class="section-title"><h3 data-i18n="notesTitle">后来的人会看见</h3><button id="board" class="text-button" data-i18n="visitBoard">留言板 ↗</button></div>
-   <div id="notes" class="notes"><p data-i18n="emptyNotes">这里还很安静。第一句话，留给你。</p></div>
+   <div id="notes" tabindex="0" class="notes"><p data-i18n="emptyNotes">这里还很安静。第一句话，留给你。</p></div>
    <button id="agent" class="agent-link" disabled><span>◈</span><span data-i18n="inviteAgent">邀请一个外部 Agent</span><span>↗</span></button>
    </div>
   </aside>
@@ -77,5 +77,5 @@
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js?v=0.4.1"></script>
+<script type="module" src="/static/app.js?v=0.5.0"></script>
 </body></html>

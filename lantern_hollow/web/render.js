@@ -1,4 +1,4 @@
-import {travelerLayout,hitTraveler} from './ui-layout.js';
+import {travelerLayout,hitTraveler,placeNameplates} from './ui-layout.js';
 // Original pixel-art renderer. World positions and actions always come from the server.
 import {CLIPS,actionClip} from './assets.js';
 import {ServerClock} from './presentation.js';
@@ -203,16 +203,8 @@ export class VillageRenderer{
   }
   for(const [x,y] of [[15,12],[23,12],[26,11],[31,12],[10,21],[20,21]])drawables.push({y:(y+1)*T,draw:()=>this.lamp(c,x,y,now)});
   drawables.sort((a,b)=>a.y-b.y);drawables.forEach(d=>d.draw());
-  // One readable label for an overlapping group. Every sprite remains selectable.
-  for(const p of layout){const a=p.actor,featured=p.group.includes(this.focusRole)?this.focusRole:p.group.includes(this.selfId)?this.selfId:p.group[0];
-   if(p.group.length>1&&a.role_id!==featured)continue;
-   const x=p.x*T+8,y=(p.y+1)*T-43;
-   const label=a.name+(p.group.length>1?' · +'+(p.group.length-1):'');c.save();c.font='7px monospace';c.textAlign='center';
-   const w=Math.ceil(c.measureText(label).width)+8;rect(c,x-w/2,y-7,w,10,'rgba(15,30,31,.86)');
-   c.fillStyle=a.role_id===this.focusRole?'#ffe2a0':'#e1e6ce';c.fillText(label,Math.round(x),Math.round(y));
-   if(a.role_id===this.focusRole){c.strokeStyle='#f1ce80';c.strokeRect(Math.round(x-9),Math.round(p.y*T-18),18,35);}
-   c.restore();
-  }
+  // Control/focus emphasis exists independently from label placement.
+  for(const p of layout)if(p.actor.role_id===this.focusRole){c.strokeStyle='#f1ce80';c.strokeRect(Math.round(p.x*T-1),Math.round(p.y*T-18),18,35);}
   // Warm hanging lights, high enough not to imply collision.
   const lights=[];
   for(let i=0;i<11;i++){const x=195+i*18,y=121+Math.sin(i/10*Math.PI)*14;lights.push([x,y]);if(i)line(c,lights[i-1],[x,y],'#65694d');rect(c,x-1,y,3,4,i%2?'#dbae69':'#e3c88a');}
@@ -226,7 +218,28 @@ export class VillageRenderer{
   const g=c.createRadialGradient(320,210,110,320,200,390);g.addColorStop(0,'rgba(14,25,31,0)');g.addColorStop(1,'rgba(11,24,29,.35)');c.fillStyle=g;c.fillRect(0,0,640,416);
   if(this.target){const t=this.map.targets.find(a=>a.id===this.target);if(t){const yy=t.y*T-28+(this.reduced?0:Math.sin(now*4)*2);poly(c,[[t.x*T+4,yy],[t.x*T+12,yy],[t.x*T+8,yy+4]],'#ffe1a0');}}
   c.restore();
+  this.drawNameplates(layout,c);
   const assetStatus=this.assets?'ready':'fallback',clips=JSON.stringify(this.lastClips);if(this.canvas.dataset.assets!==assetStatus)this.canvas.dataset.assets=assetStatus;if(this.canvas.dataset.clips!==clips)this.canvas.dataset.clips=clips;
+ }
+ drawNameplates(layout,c){
+  const ratio=this.canvas.width/Math.max(1,this.canvas.clientWidth),font=Math.max(7,Math.round(11*ratio));
+  const margin=Math.max(2,Math.round(3*ratio)),height=font+margin*2;
+  c.save();c.setTransform(1,0,0,1,0,0);c.font=`${font}px system-ui`;c.textBaseline='middle';c.textAlign='left';
+  const candidates=[],obstacles=[];
+  for(const p of layout){const a=p.actor,anchor=this.camera.project(p.x*T+8,(p.y+1)*T-30),feet=this.camera.project(p.x*T+8,(p.y+1)*T);
+   obstacles.push({x:feet.x-10*this.camera.zoom,y:feet.y-28*this.camera.zoom,w:20*this.camera.zoom,h:28*this.camera.zoom});
+   const featured=p.group.includes(this.focusRole)?this.focusRole:p.group.includes(this.selfId)?this.selfId:p.group[0];
+   if(p.group.length>1&&a.role_id!==featured)continue;
+   const suffix=p.group.length>1?' · +'+(p.group.length-1):'';let label=a.name+suffix;
+   const maxWidth=Math.min(this.canvas.width*.48,200*ratio);let chars=[...a.name];
+   while(chars.length>1&&c.measureText(label).width+2*margin>maxWidth){chars.pop();label=chars.join('')+'…'+suffix;}
+   candidates.push({id:a.role_id,ax:anchor.x,ay:anchor.y,w:Math.ceil(c.measureText(label).width)+2*margin,h:height,label,priority:a.role_id===this.focusRole?2:a.role_id===this.selfId?1:0});
+  }
+  const labels=placeNameplates(candidates,{width:this.canvas.width,height:this.canvas.height},obstacles,Math.max(2,2*ratio));
+  for(const p of labels){if(Math.abs(p.x+p.w/2-p.ax)>margin||p.ay-p.y-p.h>height){c.strokeStyle='#bccbaa';c.beginPath();c.moveTo(p.ax,p.ay);c.lineTo(p.x+p.w/2,p.y+p.h);c.stroke();}
+   rect(c,p.x,p.y,p.w,p.h,'rgba(15,30,31,.96)');c.fillStyle=p.priority?'#ffe2a0':'#e1e6ce';c.fillText(p.label,Math.round(p.x+margin),Math.round(p.y+p.h/2));}
+  c.restore();this.nameplates=labels.map(({id,x,y,w,h})=>({id,x,y,w,h}));
+  const serialized=JSON.stringify(this.nameplates);if(this.canvas.dataset.nameplates!==serialized)this.canvas.dataset.nameplates=serialized;
  }
  portrait(canvas,kind){canvas.width=48;canvas.height=48;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;rect(c,0,0,48,48,'#304440');c.drawImage(this.getFrame(kind,'down',0),0,0,24,23,0,0,48,46);}
 }
