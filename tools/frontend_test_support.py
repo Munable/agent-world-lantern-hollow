@@ -1,5 +1,5 @@
 """Explicit, isolated frontend test environments. No engine fallback in matrix runs."""
-import os
+import os,socket
 from contextlib import contextmanager
 from functools import partial
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
@@ -12,12 +12,21 @@ def launch_browser(p,name=None):
     if name not in ('chromium','firefox','webkit'):raise ValueError('Unsupported test browser')
     return getattr(p,name).launch(headless=True)
 
+class ExclusiveHTTPServer(ThreadingHTTPServer):
+    # Windows SO_REUSEADDR can admit a second listener for the same origin.
+    # Test fixtures must own different ports, not accidentally serve each other.
+    allow_reuse_address=False
+    def server_bind(self):
+        if os.name=='nt' and hasattr(socket,'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        super().server_bind()
+
 @contextmanager
 def static_client(directory):
     class Quiet(SimpleHTTPRequestHandler):
         def log_message(self,*args):pass
     for port in range(24200,24300):
-        try:s=ThreadingHTTPServer(('127.0.0.1',port),partial(Quiet,directory=str(directory)));break
+        try:s=ExclusiveHTTPServer(('127.0.0.1',port),partial(Quiet,directory=str(directory)));break
         except OSError:continue
     else:raise RuntimeError('No browser-safe fixture port')
     thread=Thread(target=s.serve_forever,daemon=True);thread.start()
