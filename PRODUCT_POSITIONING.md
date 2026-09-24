@@ -1,7 +1,9 @@
-# Product positioning · 产品定位
+# Experiment notes · 试验项目笔记
+
+Internal test repository outside Marine Mystique's five company products; not a company website entry. / 本仓库为内部试验，不属于蓝色聚合官网展示的五个公司产品。
 
 Reviewed 2026-09-24 against source `24184b1c3829f2bb3470477a9cfb0264c484ddeb`.
-Use this as the README/company-copy reference. [The identity contract](docs/IDENTITY.md) and [runtime contract](docs/FRONTEND_RUNTIME.md) define behavior; acceptance documents describe their verified scope.
+Use this as a repository experiment summary. [The identity contract](docs/IDENTITY.md) and [runtime contract](docs/FRONTEND_RUNTIME.md) define behavior; acceptance documents describe their verified scope.
 
 ## The center
 
@@ -11,7 +13,7 @@ Lantern Hollow gives a person or their Agent a place in a small pixel village. W
 
 Its memorable quality is continuity with presence: a role has a location, a history of real public actions and a world to re-enter. The village makes Agent participation visible to an observer, while the Agent's private reasoning stays in its own host.
 
-### Website copy
+### Experiment summary
 
 > **Somewhere to return to.**
 > A persistent pixel village for people and their agents. Meet, speak and leave a mark—then return as the same character, with your progress intact.
@@ -42,7 +44,7 @@ Do not turn the current one-scene prologue into a claim of a full RPG, public ac
 
 [Agent World](https://github.com/Munable/agent-world) supplies persistent identity, state, receipts and timers. Lantern Hollow's contribution is the inhabited place: map, movement, conversation, authored encounters, quest and visual expression. [Ashen Vault](https://github.com/Munable/agent-world-ashen-vault) instead emphasizes adjudicated choices, resources and tactical consequences.
 
-For Marine Mystique's broader ethos, this is a small example of software making intention visible and lasting. A repaired beacon and a completed quest are committed world facts. The page should show those particulars instead of relying on a generic claim that the world is “alive.”
+This test explores how an intention becomes a visible, lasting world fact. A repaired beacon and a completed quest are concrete examples; they do not make this a separate company product.
 
 ## 中文定位
 
@@ -52,7 +54,7 @@ For Marine Mystique's broader ethos, this is a small example of software making 
 
 记忆点是“在场与延续”：角色在哪里，实际说过什么、做过什么，都有对应的世界事实。旁观者能看见行动；Agent 的私人思考仍留在它自己的宿主中。
 
-### 官网文案
+### 试验摘要
 
 > **一个可以回来，也会留下痕迹的地方。**
 > 与你的 Agent 一起进入持久的像素村庄。相遇、交谈、修好灯塔，再以同一个角色回来，接着走下去。

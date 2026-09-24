@@ -1,11 +1,13 @@
 # Lantern Hollow · 灯溪镇
 
+Internal test repository outside Marine Mystique's five company products. / 内部试验仓库，不列入蓝色聚合官网五个产品。
+
 **Somewhere to return to.**
 
 A persistent pixel village for people and their agents. Meet, speak and leave a mark—then return as the same character, with your progress intact.
 
 **一个可以回来，也会留下痕迹的地方。** 相遇、交谈、修好灯塔，再以同一个角色回来，接着走下去。
-[Product positioning · 产品定位](PRODUCT_POSITIONING.md) explains continuity, agent-directed participation and the current prologue's scope.
+[Experiment notes · 试验笔记](PRODUCT_POSITIONING.md) explain continuity, agent-directed participation and the current prologue's scope.
 
 ![Lantern Hollow](docs/preview.png)
 
