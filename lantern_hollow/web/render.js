@@ -1,3 +1,4 @@
+import {travelerLayout,hitTraveler} from './ui-layout.js';
 // Original pixel-art renderer. World positions and actions always come from the server.
 import {CLIPS,actionClip} from './assets.js';
 import {ServerClock} from './presentation.js';
@@ -46,7 +47,7 @@ export class VillageRenderer{
  constructor(canvas,map){
   this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.map=map;canvas.width=map.width*T;canvas.height=map.height*T;
   this.ctx.imageSmoothingEnabled=false;this.bg=document.createElement('canvas');this.bg.width=canvas.width;this.bg.height=canvas.height;
-  this.assets=null;this.speaking=new Set();this.lastClips={};this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.connected=true;
+  this.assets=null;this.speaking=new Set();this.lastClips={};this.atlas=new Map();this.scene=null;this.selfId=null;this.clock=new ServerClock();this.hover=null;this.destination=null;this.target=null;this.particles=[];this.last=0;this.motionPreference=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionPreference.matches;this.motionPreference.addEventListener('change',event=>{this.reduced=event.matches;});this.connected=true;
   this.camera=new SceneCamera(canvas.width,canvas.height);this.drawBase();
  }
  update(scene,selfId,serverTime){this.scene=scene;this.selfId=selfId;this.clock.sync(serverTime);if(!scene){this.camera.overview();this.focusRole=null;this.particles=[];this.speaking.clear();}}
@@ -60,6 +61,9 @@ export class VillageRenderer{
   const dx=j===i?p[0]-previous[0]:q[0]-p[0],dy=j===i?p[1]-previous[1]:q[1]-p[1];
   return {x:p[0]+(q[0]-p[0])*f,y:p[1]+(q[1]-p[1])*f,dir:dx>0?'right':dx<0?'left':dy>0?'down':dy<0?'up':a.facing||'down',moving:s<m.path.length-1};
  }
+ displayTravelers(now=this.now()){return travelerLayout(Object.values(this.scene?.entities||{}).filter(a=>a.kind==='traveler'),a=>this.actorPosition(a,now),this.map.width);}
+ displayPosition(id){return this.displayTravelers().find(p=>p.actor.role_id===id)||null;}
+ hitTraveler(point){return hitTraveler(this.displayTravelers(),point);}
  project(x,y){const p=this.camera.project(x*T+T/2,(y+1)*T-30);return {x:p.x/this.canvas.width*100,y:p.y/this.canvas.height*100};}
  event(e){
   if(e.kind!=='world.presentation')return;const p=e.payload;
@@ -193,16 +197,17 @@ export class VillageRenderer{
   for(const [i,p] of this.map.trees.entries())drawables.push({y:(p[1]+1)*T,draw:()=>this.tree(c,p[0],p[1],i*13)});
   drawables.push({y:8.5*T,draw:()=>this.tree(c,17.5,7,22,true)});
   for(const t of this.map.targets)drawables.push({y:(t.y+1)*T,draw:()=>this.targetObject(c,t,now)});
-  const actors=Object.values(this.scene?.entities||{}).filter(a=>a.kind==='traveler');
-  for(const a of actors){const p=this.actorPosition(a);const colocated=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));
-   const visualOffset=(colocated.findIndex(x=>x.role_id===a.role_id)-(colocated.length-1)/2)*.55;
-   drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,id:a.role_id,x:p.x+visualOffset,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
+  const layout=this.displayTravelers(now);
+  for(const p of layout){const a=p.actor;
+   drawables.push({y:(p.y+1)*T,draw:()=>this.character(c,{...p,id:a.role_id,kind:a.appearance,self:a.role_id===this.selfId,busy:a.busy},now)});
   }
   for(const [x,y] of [[15,12],[23,12],[26,11],[31,12],[10,21],[20,21]])drawables.push({y:(y+1)*T,draw:()=>this.lamp(c,x,y,now)});
   drawables.sort((a,b)=>a.y-b.y);drawables.forEach(d=>d.draw());
-  // Nameplates identify real entered travelers; emphasis does not imply a model is online.
-  for(const a of actors){const p=this.actorPosition(a);const stack=actors.filter(other=>{const o=this.actorPosition(other);return Math.abs(o.x-p.x)<.15&&Math.abs(o.y-p.y)<.15;}).sort((x,y)=>x.role_id.localeCompare(y.role_id));const index=stack.findIndex(other=>other.role_id===a.role_id);const x=p.x*T+8+(index-(stack.length-1)/2)*T*.55,y=(p.y+1)*T-43-index*11;
-   const label=[...a.name].slice(0,14).join('');c.save();c.font='7px monospace';c.textAlign='center';
+  // One readable label for an overlapping group. Every sprite remains selectable.
+  for(const p of layout){const a=p.actor,featured=p.group.includes(this.focusRole)?this.focusRole:p.group.includes(this.selfId)?this.selfId:p.group[0];
+   if(p.group.length>1&&a.role_id!==featured)continue;
+   const x=p.x*T+8,y=(p.y+1)*T-43;
+   const label=a.name+(p.group.length>1?' · +'+(p.group.length-1):'');c.save();c.font='7px monospace';c.textAlign='center';
    const w=Math.ceil(c.measureText(label).width)+8;rect(c,x-w/2,y-7,w,10,'rgba(15,30,31,.86)');
    c.fillStyle=a.role_id===this.focusRole?'#ffe2a0':'#e1e6ce';c.fillText(label,Math.round(x),Math.round(y));
    if(a.role_id===this.focusRole){c.strokeStyle='#f1ce80';c.strokeRect(Math.round(x-9),Math.round(p.y*T-18),18,35);}
@@ -221,7 +226,7 @@ export class VillageRenderer{
   const g=c.createRadialGradient(320,210,110,320,200,390);g.addColorStop(0,'rgba(14,25,31,0)');g.addColorStop(1,'rgba(11,24,29,.35)');c.fillStyle=g;c.fillRect(0,0,640,416);
   if(this.target){const t=this.map.targets.find(a=>a.id===this.target);if(t){const yy=t.y*T-28+(this.reduced?0:Math.sin(now*4)*2);poly(c,[[t.x*T+4,yy],[t.x*T+12,yy],[t.x*T+8,yy+4]],'#ffe1a0');}}
   c.restore();
-  this.canvas.dataset.assets=this.assets?'ready':'fallback';this.canvas.dataset.clips=JSON.stringify(this.lastClips);
+  const assetStatus=this.assets?'ready':'fallback',clips=JSON.stringify(this.lastClips);if(this.canvas.dataset.assets!==assetStatus)this.canvas.dataset.assets=assetStatus;if(this.canvas.dataset.clips!==clips)this.canvas.dataset.clips=clips;
  }
  portrait(canvas,kind){canvas.width=48;canvas.height=48;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;rect(c,0,0,48,48,'#304440');c.drawImage(this.getFrame(kind,'down',0),0,0,24,23,0,0,48,46);}
 }

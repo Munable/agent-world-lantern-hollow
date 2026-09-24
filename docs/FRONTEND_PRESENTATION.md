@@ -35,3 +35,5 @@ v0.4 复现的 BubbleQueue 出队期限缺陷已在内核 0.13.1 修复，并由
 公开接口不等于全部数据公开。独立 origin 的 CORS、鉴权、资源和错误恢复必须实际测；打开更多窗口不应产生模型调用，但普通网络与数据库成本仍需测量。
 
 Front-end sample material integration and thread ownership: [asset acceptance](FRONTEND_ASSET_ACCEPTANCE.md).
+
+Current frontend experience review, confirmed defects and unverified boundaries: [0.4.1 audit](FRONTEND_EXPERIENCE_AUDIT.md).
