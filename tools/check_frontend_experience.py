@@ -73,7 +73,10 @@ def main():
             typing=[];page.on('request',lambda req:typing.append(req.url) if req.url.endswith('/play/action') else None);page.locator('#modal textarea').press_sequentially(' wasd e',delay=60);assert not typing;record('typing_movement_letters_does_not_control_world')
             paused=[]
             def delay_response(route):paused.append((route,route.fetch()))
-            page.route('**/play/action',delay_response);page.locator('#modal form button[type=submit]').click();page.wait_for_timeout(100);assert len(paused)==1
+            page.route('**/play/action',delay_response);page.locator('#modal form button[type=submit]').click()
+            deadline=monotonic()+10
+            while not paused and monotonic()<deadline:page.wait_for_timeout(50)
+            assert len(paused)==1,'Expected exactly one completed interception before releasing the delayed response'
             page.click('#modal-close');page.click('#help');title=page.locator('#modal-title').inner_text();paused[0][0].fulfill(response=paused[0][1]);page.unroute('**/play/action');page.wait_for_timeout(500)
             expect(page.locator('#modal')).to_be_visible();expect(page.locator('#modal-title')).to_have_text(title);page.click('#modal-close');record('late_action_response_does_not_close_new_dialog')
             expect(page.locator('#timeline')).to_contain_text('Typed once, with a delayed response.');assert page.locator('#timeline b').count()==0

@@ -3,7 +3,7 @@ Results distinguish engineering gates from externally unverified physical device
 """
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import argparse,hashlib,json,os,subprocess,sys,time,traceback
+import argparse,hashlib,json,os,re,subprocess,sys,time,traceback
 ROOT=Path(__file__).resolve().parents[1]
 
 
@@ -23,6 +23,8 @@ def run(command,output,label,timeout=600):
     with log.open('w',encoding='utf-8') as stream:
         try:result=subprocess.run(command,cwd=ROOT,env=env,stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT,timeout=timeout);code=result.returncode
         except subprocess.TimeoutExpired:code=124
+    # Browser tooling may include ephemeral fixture credentials in failure logs.
+    raw=log.read_text(encoding='utf-8',errors='replace');log.write_text(re.sub(r'awid_[A-Za-z0-9_-]+','[REDACTED_FIXTURE_CREDENTIAL]',raw),encoding='utf-8')
     item={'label':label,'command':['python' if v==sys.executable else v for v in command],'exit_code':code,'started_at':started,'elapsed_seconds':time.time()-started,'log':str(log.relative_to(ROOT))}
     print(json.dumps(item),flush=True)
     (output/(label+'.json')).write_text(json.dumps(item,indent=2),encoding='utf-8')
