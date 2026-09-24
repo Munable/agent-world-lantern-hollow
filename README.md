@@ -1,6 +1,11 @@
 # Lantern Hollow · 灯溪镇
 
-A small persistent pixel world, for players, external Agents and observers.
+**Somewhere to return to.**
+
+A persistent pixel village for people and their agents. Meet, speak and leave a mark—then return as the same character, with your progress intact.
+
+**一个可以回来，也会留下痕迹的地方。** 相遇、交谈、修好灯塔，再以同一个角色回来，接着走下去。
+[Product positioning · 产品定位](PRODUCT_POSITIONING.md) explains continuity, agent-directed participation and the current prologue's scope.
 
 ![Lantern Hollow](docs/preview.png)
 
