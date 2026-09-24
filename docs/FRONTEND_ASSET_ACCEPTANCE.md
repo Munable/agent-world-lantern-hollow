@@ -63,3 +63,5 @@ PNG 为 1024 × 499 像素。本版图集约 89 KB；不需要模型、在线作
 实测录像同时提供在 `/static/frontend-demo.html`，默认不预加载录像；仅主动观看时读取约 3.35 MB 视频，不增加正常游戏页面的下载量。素材 ZIP 约 67 KB，不含录像。
 
 复核了桌面双角色对话、素材画廊和手机页面截图；图集实际接入游戏与独立 SVG 页面。运行状态与素材异常分开报告。UI、素材包和独立端的测试记录见 [证据 JSON](evidence/frontend-assets-2026-09-24.json)。远端 CI 与合并状态另行核实，不由本地通过推定。
+
+Current frontend experience review, confirmed defects and unverified boundaries: [0.4.1 audit](FRONTEND_EXPERIENCE_AUDIT.md).

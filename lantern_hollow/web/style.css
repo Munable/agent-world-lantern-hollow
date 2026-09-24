@@ -38,3 +38,14 @@ body.spectating .journal{max-height:calc(100vh - 165px);overflow:auto}.bubble .t
 @media(max-width:600px){.camera-bar{gap:5px;padding:7px 8px}.camera-bar>span{flex-basis:100%}.camera-bar button{min-height:36px}}
 
 #asset-status{font-size:10px;opacity:.7;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#asset-status[data-state=fallback]{opacity:1;color:#e6b780}
+
+/* Experience audit: stable reading surfaces, bounded speech and explicit recovery. */
+.welcome{z-index:40}.connection-problem{position:absolute;inset:20% 8%;height:max-content;max-height:75%;overflow:auto;z-index:50;padding:24px;background:#20383bf5;border:1px solid var(--gold);font-size:14px}.connection-problem h2{margin-top:0}.connection-problem .gold{justify-content:center;min-height:44px}
+.traveler-row{grid-template-columns:minmax(0,1fr);gap:5px}.traveler-row strong{overflow-wrap:anywhere}.traveler-row .state{grid-row:2}.traveler-row small{overflow-wrap:anywhere}
+.bubble{width:min(260px,75%);max-width:75%;font-size:12px;line-height:1.55}.bubble strong{font-size:10px;overflow-wrap:anywhere}.bubble-body{display:grid}.typed,.bubble-measure{grid-area:1/1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}.bubble-measure{visibility:hidden}
+.speech-overflow{position:absolute;bottom:8px;right:8px;z-index:15;max-width:90%;padding:9px 12px;border:1px solid var(--gold);border-radius:6px;background:#1c3438f5;color:var(--text);font-size:12px;min-height:40px}
+@media(max-width:600px){.camera-bar button{min-height:44px}.toolbar button{min-height:40px;font-size:11px}.traveler-chip small{font-size:10px}.bubble{padding:7px 9px;width:min(260px,78%);max-width:78%;font-size:12px}.bubble strong{font-size:10px}.typed,.bubble-measure{-webkit-line-clamp:3}.connection-problem{inset:8%;padding:16px}.connection-problem h2{font-size:20px}}
+
+.travelers{max-height:255px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:3px}.traveler-row{flex-shrink:0}@media(max-width:600px){.travelers{max-height:220px}.live-panel .small{font-size:12px}.timeline .event-text{font-size:12px}.traveler-row small{font-size:11px}}
+
+body.spectating .toolbar{display:none}body.spectating .traveler-chip strong{max-width:260px}#timeline-new{width:100%;min-height:38px;color:var(--gold);border:1px solid var(--line);font-size:12px;margin:4px 0}

@@ -80,3 +80,5 @@ See [frontend asset acceptance](docs/FRONTEND_ASSET_ACCEPTANCE.md). This fronten
 thread owns materials, client integration and visual acceptance; autonomous model
 and kernel work is a separate workstream. Actual world state is never replaced
 with a scripted frontend animation result.
+
+Current frontend experience review, confirmed defects and unverified boundaries: [0.4.1 audit](docs/FRONTEND_EXPERIENCE_AUDIT.md).

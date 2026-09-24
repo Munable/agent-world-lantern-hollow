@@ -38,4 +38,6 @@ jobs:
         run: python tools/check_camera.py
       - if: runner.os == 'Linux'
         run: python tools/check_sample_assets.py
+      - if: runner.os == 'Linux'
+        run: python tools/check_frontend_experience.py --soak-seconds 90
       - run: python -m pip wheel --no-deps --wheel-dir dist .

@@ -1,5 +1,6 @@
+import {placeBubble} from './ui-layout.js';
 import {loadSampleAssets} from './assets.js';
-import {VillageRenderer} from './render.js?v=0.4.0';
+import {VillageRenderer} from './render.js?v=0.4.1';
 import {bindCameraInput} from './camera.js?v=0.3.0';
 import {bubbleFromEvent,cueSource} from './presentation.js';
 import {EventLedger,BubbleQueue} from '/bridge/stream-client.js?v=0.13.1';
@@ -30,9 +31,10 @@ if(validRole(linkedRole)){
  history.replaceState(null,'',clean.pathname+clean.search+clean.hash);
 }
 focusedRole=preferredRole;
+function followCameraRole(id){const overview=renderer.camera.zoom===1;renderer.camera.follow(id);if(id&&overview&&renderer.canvas.getBoundingClientRect().width<600){renderer.camera.zoom=2.6;renderer.camera.constrain();}}
 function followHome(){
  const id=mode==='play'?roleId:preferredRole;
- renderer.camera.follow(id);renderer.focusRole=id;focusedRole=id;updateLiveUI(true);
+ followCameraRole(id);renderer.focusRole=id;focusedRole=id;updateLiveUI(true);
 }
 function updateFocusStatus(){
  if(!renderer)return;const id=mode==='play'?roleId:preferredRole;const a=view?.snapshot.entities?.[id];
@@ -60,21 +62,21 @@ function watchRoleDialog(){
 }
 
 
-function selectRole(id){focusedRole=id;renderer.focusRole=id||roleId;renderer.camera.follow(id||roleId);updateLiveUI(true);}
+function selectRole(id){focusedRole=id;renderer.focusRole=id||roleId;followCameraRole(id||roleId);updateLiveUI(true);}
 function focusPublicRole(id){
  if(id){if(!rememberRole(id))return;}else{preferredRole=null;localStorage.removeItem(focusKey);}
  selectRole(id);
 }
 
 const pendingKey='lh.pending';
-function clearSession(){++generation;ledger.clear();bubbleQueue.clear();streamCursor=null;historyCursor=null;$('#timeline').replaceChildren();$('#travelers').replaceChildren();$('#public-notes').replaceChildren();delete $('#public-notes').dataset.signature;text($('#traveler-count'),'0');rosterSignature=timelineSignature='';clearTimeout(pollTimer);roleId=null;view=null;canControl=false;selected=null;held.clear();renderer?.update(null,null);$('#bubbles').replaceChildren();dialogueStamp='';$('#welcome').hidden=false;$('#completion').hidden=true;completionShown=false;$$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);updateUI(true);}
+function clearSession(){$('#speech-overflow').hidden=true;++generation;ledger.clear();bubbleQueue.clear();streamCursor=null;historyCursor=null;$('#timeline').replaceChildren();$('#travelers').replaceChildren();$('#public-notes').replaceChildren();delete $('#public-notes').dataset.signature;text($('#traveler-count'),'0');rosterSignature=timelineSignature='';clearTimeout(pollTimer);roleId=null;view=null;canControl=false;selected=null;held.clear();renderer?.update(null,null);$('#bubbles').replaceChildren();dialogueStamp='';$('#welcome').hidden=false;$('#completion').hidden=true;completionShown=false;$$('#say,#intent,#stop,#quest-action,#agent').forEach(x=>x.disabled=true);updateUI(true);}
 function toast(message){text($('#toast'),message);$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4200);}
 class RequestError extends Error{constructor(status,body){super(body.message||tr('failed'));this.status=status;this.code=body.error;}}
 async function request(path,{method='GET',data}={}){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
  try{const response=await fetch(path,{method,headers:{'Content-Type':'application/json','X-Lantern-Client':'1'},body:data===undefined?undefined:JSON.stringify(data),signal:controller.signal});const body=await response.json();if(!response.ok)throw new RequestError(response.status,body);return body;}finally{clearTimeout(timer);}
 }
-function connected(value){$('#connection').classList.toggle('offline',!value);text($('#connection span'),(view?(value?(lang==='zh'?'已同步世界 · '+(mode==='spectate'?'只读观战':'玩家'):'World synchronized · '+mode):tr('offline')):tr('connecting')));if(renderer)renderer.connected=value;}
+function connected(value){$('#connection').classList.toggle('offline',!value);text($('#connection span'),(view?(value?(lang==='zh'?'已同步世界 · '+(mode==='spectate'?'只读观战':'玩家'):'World synchronized · '+mode):tr('offline')):(value?tr('connecting'):(lang==='zh'?'连接失败 · 请重试':'Connection failed · retry'))));if(renderer)renderer.connected=value;if(value)$('#connection-problem').hidden=true;}
 function apply(update){
  if(update.kind==='snapshot'){view={...update,snapshot:structuredClone(update.snapshot)};}
  else if(view?.cursor===update.base_cursor){const snap=structuredClone(view.snapshot);for(const section of ['entities','resources']){snap[section]??={};for(const key of update.delta[section].remove)delete snap[section][key];for(const [key,val]of Object.entries(update.delta[section].upsert)){Object.defineProperty(snap[section],key,{value:val,enumerable:true,writable:true,configurable:true});}}snap.meta=update.delta.meta;view={...update,snapshot:snap};}
@@ -220,22 +222,32 @@ function updateLiveUI(force=false){
  $('#load-history').hidden=!historyAvailable||ledger.byId.size>=ledger.limit;
  const signature=JSON.stringify([actors,focusedRole,lang]);
  if(force||signature!==rosterSignature){
-  rosterSignature=signature;$('#travelers').replaceChildren();
-  if(!actors.length){const p=document.createElement('p');p.className='empty';p.textContent=zh?'尚无旅人入场。网页已连接，不需要先创建玩家。':'No traveler has entered. Observation is connected without a player.';$('#travelers').append(p);}
-  for(const a of actors){
-   const row=document.createElement('button');row.className='traveler-row'+(focusedRole===a.role_id?' focused':'');row.dataset.role=a.role_id;
-   const name=document.createElement('strong'),state=document.createElement('span'),detail=document.createElement('small');
-   name.textContent=a.name;state.className='state';state.textContent=a.movement?(zh?'行走中':'Walking'):a.busy?(zh?'修灯中':'Repairing'):(zh?'无进行中的动作':'No active action');
-   detail.textContent=(a.last_action?.source?(zh?'最近保留记录 ':'Last retained record '):(zh?'最后世界动作 ':'Last world action '))+localClock(a.last_action?.at)+' · ['+a.position.join(', ')+']';
-   row.append(name,state,detail);row.onclick=()=>selectRole(a.role_id);
-   row.ondblclick=()=>showTraveler(a.role_id);$('#travelers').append(row);
+  rosterSignature=signature;const container=$('#travelers');
+  const activeId=container.contains(document.activeElement)?document.activeElement.dataset.role:null;
+  const existing=new Map([...container.querySelectorAll('[data-role]')].map(row=>[row.dataset.role,row]));
+  if(!actors.length){container.replaceChildren();const p=document.createElement('p');p.className='empty';p.textContent=zh?'尚无旅人入场。网页已连接，不需要先创建玩家。':'No traveler has entered. Observation is connected without a player.';container.append(p);}
+  else container.querySelector('.empty')?.remove();
+  for(const [index,a] of actors.entries()){
+   let row=existing.get(a.role_id);
+   if(!row){row=document.createElement('button');row.dataset.role=a.role_id;row.append(document.createElement('strong'),document.createElement('span'),document.createElement('small'));row.children[1].className='state';row.onclick=()=>selectRole(a.role_id);row.ondblclick=()=>showTraveler(a.role_id);}
+   row.className='traveler-row'+(focusedRole===a.role_id?' focused':'');
+   row.setAttribute('aria-label',a.name);row.children[0].textContent=a.name;
+   row.children[1].textContent=a.movement?(zh?'行走中':'Walking'):a.busy?(zh?'修灯中':'Repairing'):(zh?'无进行中的动作':'No active action');
+   row.children[2].textContent=(a.last_action?.source?(zh?'最近保留记录 ':'Last retained record '):(zh?'最后世界动作 ':'Last world action '))+localClock(a.last_action?.at)+' · ['+a.position.join(', ')+']';
+   if(container.children[index]!==row)container.insertBefore(row,container.children[index]||null);
+   existing.delete(a.role_id);
   }
+  for(const row of existing.values())row.remove();
+  if(activeId)[...container.children].find(row=>row.dataset.role===activeId)?.focus({preventScroll:true});
  }
  const items=ledger.items().filter(e=>filterKind==='all'||e.payload?.channel===filterKind);
  const sig=JSON.stringify([items.map(e=>e.event_id),lang,filterKind,canControl]);
  if(force||sig!==timelineSignature){
   timelineSignature=sig;const list=$('#timeline');const atBottom=list.scrollHeight-list.clientHeight-list.scrollTop<40;
-  const previousHeight=list.scrollHeight,previousTop=list.scrollTop;list.replaceChildren();
+  const previousLast=list.lastElementChild?.dataset.eventId;const previousTop=list.scrollTop,listTop=list.getBoundingClientRect().top;
+  const anchor=[...list.children].find(li=>li.getBoundingClientRect().bottom>listTop);
+  const anchorId=anchor?.dataset.eventId,anchorOffset=anchor?anchor.getBoundingClientRect().top-listTop:0;
+  const focusId=list.contains(document.activeElement)?document.activeElement.closest('[data-event-id]')?.dataset.eventId:null;list.replaceChildren();
   for(const e of items){
    const p=e.payload||{},d=p.data||{},li=document.createElement('li');li.dataset.eventId=e.event_id;li.dataset.source=cueSource(p);li.className=e.historical?'history':'fresh';
    const top=document.createElement('div'),who=document.createElement('span'),clock=document.createElement('time'),msg=document.createElement('div');
@@ -249,8 +261,10 @@ function updateLiveUI(force=false){
    }
    list.append(li);
   }
-  if(atBottom)list.scrollTop=list.scrollHeight;
-  else list.scrollTop=Math.max(0,previousTop+list.scrollHeight-previousHeight);
+  if(atBottom){list.scrollTop=list.scrollHeight;$('#timeline-new').hidden=true;}
+  else if(previousLast&&previousLast!==list.lastElementChild?.dataset.eventId){$('#timeline-new').hidden=false;$('#timeline-new').textContent=zh?'有新记录 · 到最新':'New records · jump to latest';}
+  if(!atBottom){const retained=[...list.children].find(li=>li.dataset.eventId===anchorId);list.scrollTop=retained?list.scrollTop+retained.getBoundingClientRect().top-list.getBoundingClientRect().top-anchorOffset:Math.min(previousTop,list.scrollHeight);}
+  if(focusId)[...list.children].find(li=>li.dataset.eventId===focusId)?.querySelector('button')?.focus({preventScroll:true});
  }
 }
 function showTraveler(id){
@@ -266,6 +280,7 @@ function showTraveler(id){
 $('#focus-clear').onclick=()=>focusPublicRole(null);
 $('#return-role').onclick=followHome;$('#follow-agent').onclick=watchRoleDialog;
 $('#zoom-in').onclick=()=>{renderer.camera.scale(1.25);updateFocusStatus();};$('#zoom-out').onclick=()=>{renderer.camera.scale(.8);updateFocusStatus();};$('#overview').onclick=()=>{renderer.camera.overview();updateFocusStatus();};
+$('#timeline-new').onclick=()=>{$('#timeline').scrollTop=$('#timeline').scrollHeight;$('#timeline-new').hidden=true;};$('#timeline').addEventListener('scroll',()=>{const list=$('#timeline');if(list.scrollHeight-list.clientHeight-list.scrollTop<40)$('#timeline-new').hidden=true;});
 $('#event-filter').onchange=e=>{filterKind=e.target.value;updateLiveUI(true);};
 $('#load-history').onclick=async()=>{
  if(!historyCursor)return;const g=generation;const button=$('#load-history');button.disabled=true;
@@ -296,28 +311,32 @@ function renderBubbles(){
   name.textContent=(actor?.name||(npc?targetName(npc):tr('visitor')))+sourceLabel(c.source,c.channel);
   msg.className='typed';msg.setAttribute('aria-hidden','true');msg.dataset.full=lang==='zh'?c.text:c.en||c.text;msg.dataset.started=String(c.started);
   accessible.className='sr-only';accessible.textContent=msg.dataset.full;
-  el.append(name,msg,accessible);$('#bubbles').append(el);
+  const body=document.createElement('span'),measure=document.createElement('span');body.className='bubble-body';measure.className='bubble-measure';measure.setAttribute('aria-hidden','true');measure.textContent=msg.dataset.full;body.append(measure,msg);el.append(name,body,accessible);$('#bubbles').append(el);
  }}
  const container=$('#bubbles'),canvas=$('#world'),wrap=$('#canvas-wrap'),rect=canvas.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
  container.style.top=(rect.top-wr.top)+'px';container.style.left=(rect.left-wr.left)+'px';container.style.width=rect.width+'px';container.style.height=rect.height+'px';
- const occupied=[];
- for(const el of $$('#bubbles .bubble')){
+ const occupied=[],obscured=!$('#welcome').hidden||$('#modal').open||!$('#completion').hidden;
+ let overflow=0,truncated=false;const maxBubbles=rect.width<600?2:4;
+ const elements=$$('#bubbles .bubble').sort((a,b)=>Number(b.dataset.subject===(focusedRole||roleId))-Number(a.dataset.subject===(focusedRole||roleId)));
+ for(const el of elements){
+  el.hidden=false;
   const msg=el.querySelector('.typed'),chars=[...msg.dataset.full],count=renderer.reduced?chars.length:Math.max(1,Math.floor((now-Number(msg.dataset.started))*55));
   const visible=chars.slice(0,count).join('');if(msg.textContent!==visible)msg.textContent=visible;
-  const actor=view.snapshot.entities[el.dataset.subject],npc=map.targets.find(t=>t.id===el.dataset.subject),pos=actor?renderer.actorPosition(actor):npc;el.hidden=!pos;if(!pos){el.hidden=true;continue;}
-  const anchor=renderer.project(pos.x,pos.y);el.hidden=anchor.x<0||anchor.x>100||anchor.y<0||anchor.y>100;if(el.hidden)continue;const width=el.offsetWidth,height=el.offsetHeight;
-  const x=Math.max(5,Math.min(rect.width-width-5,anchor.x/100*rect.width-width/2));
-  let y=Math.max(5,anchor.y/100*rect.height-height);
-  for(const previous of occupied){if(x<previous.x+previous.w+5&&x+width>previous.x-5&&y<previous.y+previous.h+5&&y+height>previous.y-5){
-    y=previous.y-height-7;if(y<5)y=previous.y+previous.h+8;
-  }}
-  y=Math.min(Math.max(5,y),Math.max(5,rect.height-height-5));
-  el.style.left=x+'px';el.style.top=y+'px';el.style.setProperty('--tail',Math.max(10,Math.min(width-12,anchor.x/100*rect.width-x))+'px');
-  occupied.push({x,y,w:width,h:height});
+  const npc=map.targets.find(t=>t.id===el.dataset.subject),pos=renderer.displayPosition(el.dataset.subject)||npc;
+  if(obscured||!pos){el.hidden=true;continue;}
+  const anchor=renderer.project(pos.x,pos.y);
+  if(anchor.x<0||anchor.x>100||anchor.y<0||anchor.y>100){el.hidden=true;continue;}
+  const px=anchor.x/100*rect.width,py=anchor.y/100*rect.height;
+  const placed=occupied.length<maxBubbles?placeBubble({x:px,y:py},el.offsetWidth,el.offsetHeight,{width:rect.width,height:rect.height},occupied):null;
+  if(!placed){el.hidden=true;overflow++;continue;}
+  const measure=el.querySelector('.bubble-measure');truncated=truncated||measure.scrollHeight>measure.clientHeight+1;
+  el.style.left=placed.x+'px';el.style.top=placed.y+'px';el.style.setProperty('--tail',Math.max(10,Math.min(placed.w-12,px-placed.x))+'px');occupied.push(placed);
  }
+ const more=$('#speech-overflow');more.hidden=obscured||(!overflow&&!truncated);more.textContent=lang==='zh'?'完整发言 · 查看记录':'Full speech · open history';
+
 }
 let lastKeyAt=0;const held=new Set();
-function frame(t){if(renderer){renderer.draw(t);renderBubbles();if(held.size&&roleId&&canControl&&$('#completion').hidden&&!$('#modal').open&&t-lastKeyAt>280&&!working){const me=view?.snapshot.meta.self;const [key]=held;const move={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[key];if(move&&me){lastKeyAt=t;const p=renderer.actorPosition(me);const x=Math.round(p.x)+move[0],y=Math.round(p.y)+move[1];if(!blocked.has(`${x},${y}`)){selected=null;renderer.target=null;act('town.move',{x,y});}}}}
+function frame(t){if(renderer){if(lastSuccess&&renderer.connected&&Date.now()-lastSuccess>6000){connected(false);updateLiveUI();}renderer.draw(t);renderBubbles();if(held.size&&roleId&&canControl&&$('#completion').hidden&&!$('#modal').open&&t-lastKeyAt>280&&!working){const me=view?.snapshot.meta.self;const [key]=held;const move={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[key];if(move&&me){lastKeyAt=t;const p=renderer.actorPosition(me);const x=Math.round(p.x)+move[0],y=Math.round(p.y)+move[1];if(!blocked.has(`${x},${y}`)){selected=null;renderer.target=null;act('town.move',{x,y});}}}}
  requestAnimationFrame(frame);
 }
 $('#modal').addEventListener('close',()=>{if(!$('#modal').open)$('#modal-body').replaceChildren();});
@@ -339,7 +358,7 @@ function showComposer(kind,reply={}){
  }
  form.onsubmit=async event=>{event.preventDefault();send.disabled=true;const args={text:input.value};
   if(kind==='say'){if(recipients.value)args.to_role_id=recipients.value;if(reply.reply_to)args.reply_to=reply.reply_to;}
-  const r=await act('town.'+kind,args);send.disabled=false;if(r){$('#modal').close();toast(tr('saved'));}};
+  const r=await act('town.'+kind,args);send.disabled=false;if(r&&form.isConnected&&$('#modal').open){$('#modal').close();toast(tr('saved'));}};
  input.focus();
 }
 $$('[data-appearance]').forEach(b=>b.onclick=()=>{appearance=b.dataset.appearance;$$('[data-appearance]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
@@ -440,15 +459,21 @@ async function prepareSampleAssets(){
  try{const pack=await loadSampleAssets();renderer.useAssets(pack);status.dataset.state='ready';status.textContent='示例素材 / Sample art';status.title=pack.manifest.version;renderer.portrait($('#portrait'),view?.snapshot?.entities?.[preferredRole]?.appearance||view?.snapshot?.meta?.self?.appearance||'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));}
  catch(error){status.dataset.state='fallback';status.textContent='素材不可用，使用基础图形 / Basic art';status.title=String(error.message).slice(0,120);}
 }
+function showConnectionProblem(error){
+ $('#connection-problem').hidden=false;$('#connection-problem h2').textContent=lang==='zh'?'连接暂时中断':'Connection unavailable';$('#watch-health').textContent=lang==='zh'?'尚未连接，请重试':'Not connected; please retry';$('#connection-problem-text').textContent=(lang==='zh'?'暂时无法连接世界。请重试，角色与进度不会因此重建。':'The world is temporarily unavailable. Retry without recreating your role.');
+ $('#retry-world').textContent=lang==='zh'?'重新连接':'Reconnect';
+}
+$('#retry-world').onclick=()=>location.reload();
+$('#speech-overflow').onclick=()=>{filterKind='speech';$('#event-filter').value='speech';$('#journal').classList.add('open');updateLiveUI(true);$('#timeline').scrollIntoView({block:'center',behavior:renderer?.reduced?'auto':'smooth'});};
 async function boot(){
- translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);prepareSampleAssets();bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
+ setMode('spectate');translate();try{map=await request('/play/map');blocked=new Set(map.blocked.map(p=>p.join(',')));renderer=new VillageRenderer($('#world'),map);prepareSampleAssets();bindCameraInput($('#world'),renderer.camera,()=>{$('#hover-label').hidden=true;updateFocusStatus();});renderer.portrait($('#portrait'),'traveler');$$('[data-portrait]').forEach(c=>renderer.portrait(c,c.dataset.portrait));requestAnimationFrame(frame);connected(true);
  $('#world').addEventListener('pointermove',e=>{const p=hit(e),target=hitTarget(p);renderer.hover=[Math.floor(p.x),Math.floor(p.y)];renderer.target=target?.id||selected;$('#world').style.cursor=target?'pointer':blocked.has(renderer.hover.join(','))?'not-allowed':'crosshair';const label=$('#hover-label');label.hidden=!target;if(target){text(label,targetName(target));const wrap=$('#canvas-wrap').getBoundingClientRect(),r=$('#world').getBoundingClientRect();const anchor=renderer.project(target.x,target.y);label.style.left=((r.left-wrap.left+anchor.x/100*r.width)/wrap.width*100)+'%';label.style.top=((r.top-wrap.top+anchor.y/100*r.height)/wrap.height*100)+'%';}});
  $('#world').addEventListener('pointerleave',()=>{renderer.hover=null;renderer.target=selected;$('#hover-label').hidden=true;});
- $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=Object.values(view?.snapshot.entities||{}).find(a=>a.kind==='traveler'&&Math.abs(renderer.actorPosition(a).x+.5-p.x)<.8&&Math.abs(renderer.actorPosition(a).y+.5-p.y)<1);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});
- try{if(location.pathname==='/watch'||preferredRole)await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);toast(e.message);}}
+ $('#world').addEventListener('click',e=>{if(!$('#welcome').hidden)return;$('#world').focus({preventScroll:true});const p=hit(e),target=hitTarget(p);const traveler=renderer.hitTraveler(p);if(mode==='spectate'){if(traveler)showTraveler(traveler.role_id);return;}if(target){goTo(target.id);return;}if(traveler&&traveler.role_id!==roleId){showTraveler(traveler.role_id);return;}const x=Math.floor(p.x),y=Math.floor(p.y);if(blocked.has(`${x},${y}`)){toast(tr('unreachable'));return;}selected=null;renderer.target=null;act('town.move',{x,y});});
+ try{if(location.pathname==='/watch'||preferredRole)await openWatch();else await openSession();}catch(e){if(e.status===401||e.status===403){await openWatch();}else{connected(false);showConnectionProblem(e);}}
  $$('#join-mode,#follow-agent,#zoom-out,#zoom-in,#overview').forEach(el=>el.disabled=false);
- }catch(e){text($('#join-error'),e.message);$('#join-error').hidden=false;connected(false);}
+ }catch(e){showConnectionProblem(e);connected(false);}
 }
 window.addEventListener('keydown',e=>{if(!canControl||!view?.snapshot.meta.self||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName)||$('#modal').open)return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){e.preventDefault();held.add(k);}if(k==='Escape'){selected=null;if(renderer)renderer.target=null;if(!$('#completion').hidden){$('#completion').hidden=true;$('#world').focus();return;}if(roleId)act('town.stop');}if(k==='e'&&!e.repeat&&view){const p=renderer.actorPosition(view.snapshot.meta.self);const nearest=[...map.targets].sort((a,b)=>distance([p.x,p.y],a.approach)-distance([p.x,p.y],b.approach))[0];goTo(nearest.id);}});
-window.addEventListener('keyup',e=>held.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>held.clear());window.addEventListener('online',()=>{if(view)schedulePoll(1);});document.addEventListener('visibilitychange',()=>{held.clear();if(!document.hidden&&view)schedulePoll(1);});
+window.addEventListener('keyup',e=>held.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>held.clear());window.addEventListener('offline',()=>{connected(false);updateLiveUI();});window.addEventListener('online',()=>{if(view)schedulePoll(1);});document.addEventListener('visibilitychange',()=>{held.clear();if(!document.hidden&&view)schedulePoll(1);});
 boot();

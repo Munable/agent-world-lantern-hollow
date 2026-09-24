@@ -1,0 +1,97 @@
+{
+  "baseline": "588a3092ea22f3963edbf597db01a4f054d040f2",
+  "initial_findings": {
+    "initial_outage": {
+      "connected": "连接世界",
+      "visible_error": false,
+      "retry_buttons": 0,
+      "canvas_assets": null
+    },
+    "crowd_bubbles": {
+      "visible": 4,
+      "overlap_pairs": [],
+      "rectangles": [
+        {
+          "subject": "awr_ce1c3ef501616288e18ca540",
+          "left": 364,
+          "top": 500.71875,
+          "right": 608.71875,
+          "bottom": 555.703125,
+          "width": 244.71875,
+          "height": 54.984375
+        },
+        {
+          "subject": "awr_05d0f6e045cb15ea70650e70",
+          "left": 364,
+          "top": 438.71875,
+          "right": 608.71875,
+          "bottom": 493.703125,
+          "width": 244.71875,
+          "height": 54.984375
+        },
+        {
+          "subject": "awr_d5f56bfadffc32f17ae78fa1",
+          "left": 364,
+          "top": 376.71875,
+          "right": 608.71875,
+          "bottom": 431.703125,
+          "width": 244.71875,
+          "height": 54.984375
+        },
+        {
+          "subject": "awr_14f577a5eb8251e8acf963ac",
+          "left": 364,
+          "top": 314.71875,
+          "right": 608.71875,
+          "bottom": 369.703125,
+          "width": 244.71875,
+          "height": 54.984375
+        }
+      ]
+    },
+    "mobile_page_width": {
+      "viewport": 390,
+      "scroll_width": 390
+    },
+    "small_phone_width": {
+      "viewport": 320,
+      "scroll_width": 320,
+      "name_visible": true
+    },
+    "roster_focus_after_update": {
+      "expected": "awr_59a5a5a842fedb7a6f561784",
+      "actual": "BODY"
+    },
+    "history_scroll_on_append": {
+      "before": {
+        "top": 20,
+        "height": 3052
+      },
+      "after": {
+        "top": 100,
+        "height": 3132
+      }
+    },
+    "reduce_motion_after_boot": true,
+    "page_errors": []
+  },
+  "extra_findings": {
+    "rightmost_visual_sprite_click": {
+      "expected_role": "awr_fd97308745575c7b7d6251a4",
+      "modal_open": false,
+      "title": ""
+    },
+    "double_click_roster": {
+      "modal_open": true
+    },
+    "late_reply_closes_new_dialog": {
+      "expected_help_title": "慢一点，也没关系",
+      "help_still_visible": false
+    },
+    "reduced_motion_changed_after_load": {
+      "distinct_canvas_samples": 3,
+      "pause_button": "暂停动画"
+    }
+  },
+  "scope": "Original 0.4.0 isolated browser reproduction with synthetic identities; no credentials"
+}

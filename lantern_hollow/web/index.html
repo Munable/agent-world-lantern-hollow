@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css?v=0.4.0">
+  <link rel="stylesheet" href="/static/style.css?v=0.4.1">
 </head>
 <body>
 <header class="masthead">
@@ -27,6 +27,8 @@
    <div class="canvas-wrap" id="canvas-wrap">
     <canvas id="world" width="640" height="416" tabindex="0" aria-label="Village map. Click a location to walk. WASD or arrow keys to move. E to interact. Escape to stop."></canvas>
     <div id="bubbles" class="bubbles" aria-live="polite"></div>
+    <button id="speech-overflow" class="speech-overflow" type="button" hidden>更多现场发言 · 查看记录</button>
+    <section id="connection-problem" class="connection-problem" role="alert" hidden><h2>连接暂时中断</h2><p id="connection-problem-text"></p><button id="retry-world" class="gold" type="button">重新连接</button></section>
     <div id="hover-label" class="hover-label" hidden></div>
     <div class="welcome" id="welcome" hidden>
      <div class="welcome-seal">✧</div><p class="eyebrow">A WORLD THAT REMEMBERS</p>
@@ -48,7 +50,7 @@
     <div id="travelers" class="travelers"></div>
     <div class="section-title"><h3 id="timeline-title">事件与对话</h3><select id="event-filter" aria-label="Filter events"><option value="all">全部</option><option value="speech">对话</option><option value="action">动作</option></select></div>
     <p id="history-notice" class="small">历史记录不作为正在发生的动画播放。</p>
-    <ol id="timeline" class="timeline" aria-label="World timeline"></ol>
+    <ol id="timeline" class="timeline" aria-label="World timeline"></ol><button id="timeline-new" type="button" hidden>有新记录 · 到最新</button>
     <button id="load-history" class="text-button" hidden>读取更早记录</button>
     <section class="public-notes-panel"><div class="section-title"><h3 id="public-notes-title">旅人留下的话</h3></div><div id="public-notes" class="notes"></div></section>
    </section>
@@ -75,5 +77,5 @@
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js?v=0.4.0"></script>
+<script type="module" src="/static/app.js?v=0.4.1"></script>
 </body></html>

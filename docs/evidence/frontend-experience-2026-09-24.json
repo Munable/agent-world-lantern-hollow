@@ -1,0 +1,245 @@
+{
+  "version": "0.4.1",
+  "scope": "Frontend only. No kernel/world rules/MCP/dependency pin changes. Controlled HTTP identities; no model autonomy claim.",
+  "regression_tests": 81,
+  "browser_suites": 8,
+  "final_checks": {
+    "scope": "Final frontend content stable throughout these runs; parallelism is not a performance measurement",
+    "frontend_sha256": {
+      "lantern_hollow\\web\\app.js": "a893f8fceb6bb818cbf9f1eebdae6b82f7a90df6f18a717a893b711382bae199",
+      "lantern_hollow\\web\\art-gallery.css": "88cdf8127d9596a8f9a5c41a616108d1a18e1efba17dad85d1bab0765a742902",
+      "lantern_hollow\\web\\art-gallery.html": "78e7538ae41f076f9184914ef12f62551034353ac9a8610575311205007cdfed",
+      "lantern_hollow\\web\\art-gallery.js": "7a836f5c6c0252df4bfa89cad8af7760bfcdb933a434e4c5230a757fc004cb4b",
+      "lantern_hollow\\web\\assets.js": "9580163cb4e05a28c408dbecfc05713d410db92919a8645d3d05d0a45ec13aea",
+      "lantern_hollow\\web\\camera.js": "d92aacc0d3c0ddbfe42bd90cc2eecaa4f7bc2e39fbc1404b2e06e905403115db",
+      "lantern_hollow\\web\\frontend-demo.html": "a8ec6532cef0f39b9a0d04c3c7497a844222573431a9688696003585c902526c",
+      "lantern_hollow\\web\\index.html": "60384b6eef93d61759e15fcb891123728910b1abccf0843608ac1193b8cdc51f",
+      "lantern_hollow\\web\\presentation.js": "698533b24e7ead792ff0f5bdc4af908da148834899f1c0d3be8ea7779874aa1c",
+      "lantern_hollow\\web\\render.js": "fb7862754296737854db50565775e961a89f5b8287ca17a6e0c2fecad596cfd9",
+      "lantern_hollow\\web\\style.css": "1b13d06c6e989d98062cbeb4f51ceab97273399681c125dddb66dfd93d5e99b0",
+      "lantern_hollow\\web\\ui-layout.js": "54d5e74b99972e78196c8086b06b8b352d71f977e8f9facf657ab7f985f0a3fb"
+    },
+    "checks": [
+      {
+        "command": [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-q"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 21.415891499999816,
+        "log": "sealed-0.log"
+      },
+      {
+        "command": [
+          "node",
+          "tests/camera.test.mjs"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.03908720000003996,
+        "log": "sealed-1.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/browser_check.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 41.40181310000003,
+        "log": "sealed-2.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_edges.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 6.590081800000007,
+        "log": "sealed-3.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_observation.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 15.77208410000003,
+        "log": "sealed-4.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_onboarding.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.88625009999987,
+        "log": "sealed-5.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_semantic_presentation.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 19.003056499999957,
+        "log": "sealed-6.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_camera.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 20.308677999999873,
+        "log": "sealed-7.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_sample_assets.py"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 34.300376400000005,
+        "log": "sealed-8.log"
+      },
+      {
+        "command": [
+          "python",
+          "tools/check_frontend_experience.py",
+          "--soak-seconds",
+          "90"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 126.38025500000003,
+        "log": "sealed-experience.log"
+      }
+    ],
+    "all_passed": true
+  },
+  "sustained_phases": [
+    {
+      "phase": "initial fixes",
+      "elapsed_seconds": 121.2523549,
+      "cycles": 52,
+      "roles": 7,
+      "simultaneous_clients": 2,
+      "timeline_rows": 152,
+      "page_errors": 0
+    },
+    {
+      "phase": "full longer run before final affordances",
+      "elapsed_seconds": 301.3474363,
+      "cycles": 129,
+      "roles": 7,
+      "simultaneous_clients": 2,
+      "timeline_rows": 318,
+      "page_errors": 0
+    },
+    {
+      "phase": "final code",
+      "elapsed_seconds": 91.2596587999999,
+      "cycles": 39,
+      "roles": 7,
+      "simultaneous_clients": 2,
+      "timeline_rows": 124,
+      "page_errors": 0
+    }
+  ],
+  "final_experience": {
+    "scope": "Frontend-only controlled fixtures; mobile/zoom are browser emulation, not physical devices",
+    "cases": {
+      "first_load_outage_user_retry": true,
+      "all_six_colocated_sprites_hit_correct_identity": 6,
+      "roster_double_click_survives_selection_update": true,
+      "desktop_bubbles_bounded_nonoverlap": 4,
+      "crowd_overflow_has_full_history_entry": true,
+      "entry_form_not_covered_by_speech": true,
+      "keyboard_focus_survives_live_roster_update": true,
+      "appended_history_preserves_reader_position": {
+        "before": 20,
+        "after": 20
+      },
+      "new_records_badge_returns_to_latest": true,
+      "typing_movement_letters_does_not_control_world": true,
+      "late_action_response_does_not_close_new_dialog": true,
+      "offline_world_change_and_reconnect": true,
+      "responsive_sizes_and_english": [
+        [
+          320,
+          640
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          768,
+          600
+        ],
+        [
+          1024,
+          768
+        ],
+        [
+          1920,
+          1080
+        ]
+      ],
+      "single_truncated_bubble_has_full_text_entry": true,
+      "invalid_asset_manifest_safe_fallback": true,
+      "independent_viewer_still_connected": true,
+      "sustained_frontend_exercise": {
+        "elapsed_seconds": 91.2596587999999,
+        "cycles": 39,
+        "roles": 7,
+        "simultaneous_clients": 2,
+        "timeline_rows": 124,
+        "page_errors": 0
+      },
+      "prepending_older_history_preserves_visible_anchor": true,
+      "changing_reduced_motion_freezes_gallery_pixels": true,
+      "overall_completed": true
+    },
+    "page_errors": [],
+    "screenshots": [
+      "01-initial-outage.png",
+      "02-crowd-idle.png",
+      "03-crowd-speech.png",
+      "04-mobile-speech.png",
+      "05-entry_form_not_obscured.png",
+      "06-reading_position.png",
+      "07-offline.png",
+      "08-reconnected.png",
+      "viewport-320.png",
+      "viewport-390.png",
+      "viewport-768.png",
+      "viewport-1024.png",
+      "viewport-1920.png",
+      "09-mobile-english.png",
+      "10-invalid-art.png",
+      "soak-0.png",
+      "soak-20.png"
+    ],
+    "total_seconds": 125.00679009999976
+  },
+  "screenshots_reviewed": "Representative original/fixed desktop, crowded scene, mobile entry, connection failure/recovery, tablet layout, final sample mobile and sustained-run captures. Not a claim that every asset frame was manually reviewed.",
+  "unverified": [
+    "Physical iOS/Android devices and software keyboards",
+    "Safari/WebKit",
+    "Multi-hour endurance",
+    "Full screen-reader/contrast audit",
+    "Final production art quality"
+  ],
+  "ci": "Must be checked separately before merge",
+  "packaging": {
+    "version": "0.4.1",
+    "wheel_sha256": "360b659449fcf4322950d03ba0401f2a583fd556fec643d84e6849bae2acaee2",
+    "checked_runtime_and_media_bytes": true,
+    "no_kernel_world_server_or_pin_change": true,
+    "model_calls": 0
+  }
+}
