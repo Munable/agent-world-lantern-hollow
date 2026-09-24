@@ -142,17 +142,30 @@ async function poll(){
   else schedulePoll(1500);
  }finally{polling=false;}
 }
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function confirmReceipt(operationId,attempts=4){
+ let lastError=null;
+ for(let attempt=0;attempt<attempts;attempt++){
+  try{return await request('/play/receipt/'+encodeURIComponent(operationId));}
+  catch(err){
+   lastError=err;
+   if(err instanceof RequestError&&err.status!==404&&err.status<500)throw err;
+   if(attempt+1<attempts)await pause(120*(attempt+1));
+  }
+ }
+ throw lastError;
+}
 async function recoverPending(){
  let pending;try{pending=JSON.parse(tabState.getItem(pendingKey)||'null');}catch{tabState.removeItem(pendingKey);return;}
  if(!pending||pending.role_id!==roleId){tabState.removeItem(pendingKey);return;}
- try{await request('/play/receipt/'+encodeURIComponent(pending.operation_id));tabState.removeItem(pendingKey);toast(tr('recovered'));}
- catch(e){if(e.status===404){await sendIntent(pending);}else throw e;}
+ try{await confirmReceipt(pending.operation_id);tabState.removeItem(pendingKey);toast(tr('recovered'));}
+ catch(e){if(e instanceof RequestError&&e.status===404){await sendIntent(pending);}else throw e;}
 }
 async function sendIntent(intent){
  try{const result=await request('/play/action',{method:'POST',data:intent});tabState.removeItem(pendingKey);return result;}
  catch(err){if(err instanceof RequestError&&err.status<500){tabState.removeItem(pendingKey);throw err;}
   toast(tr('uncertain'));
-  try{const result=await request('/play/receipt/'+encodeURIComponent(intent.operation_id));tabState.removeItem(pendingKey);return result;}catch{}
+  try{const result=await confirmReceipt(intent.operation_id);tabState.removeItem(pendingKey);return result;}catch{}
   throw err;
  }
 }
