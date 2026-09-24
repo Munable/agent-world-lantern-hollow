@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -21,9 +21,9 @@ jobs:
       - run: python -m unittest discover -s tests -q
       - run: node tests/camera.test.mjs
       - if: runner.os == 'Linux'
-        run: python -m pip install playwright
+        run: python -m pip install -r tools/requirements-frontend-test.txt
       - if: runner.os == 'Linux'
-        run: python -m playwright install --with-deps chromium
+        run: python -m playwright install --with-deps chromium firefox webkit
       - if: runner.os == 'Linux'
         run: python tools/browser_check.py
       - if: runner.os == 'Linux'
@@ -40,4 +40,12 @@ jobs:
         run: python tools/check_sample_assets.py
       - if: runner.os == 'Linux'
         run: python tools/check_frontend_experience.py --soak-seconds 90
+      - if: runner.os == 'Linux'
+        run: npm ci --prefix tools/qa --no-audit --no-fund
+      - if: runner.os == 'Linux'
+        run: python tools/check_browser_matrix.py --browsers chromium,firefox,webkit --axe tools/qa/node_modules/axe-core/axe.min.js
+      - if: runner.os == 'Linux'
+        run: python tools/check_frontend_faults.py
+      - if: runner.os == 'Linux'
+        run: python tools/check_accessibility_gate.py --axe tools/qa/node_modules/axe-core/axe.min.js
       - run: python -m pip wheel --no-deps --wheel-dir dist .

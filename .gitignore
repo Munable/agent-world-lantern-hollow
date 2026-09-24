@@ -9,3 +9,5 @@ dist/
 build/
 *.egg-info/
 test-results/
+
+tools/qa/node_modules/

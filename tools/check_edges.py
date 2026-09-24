@@ -50,20 +50,25 @@ def main():
                 return c.execute("SELECT COUNT(*) FROM operations WHERE actor_role_id=? AND function_id='town.say'", (role,)).fetchone()[0]
         before = counts()
         intercepted = []
+        receipt_intercepted = []
         def lose_response(route):
             response = route.fetch()
             assert response.status == 200, response.text()
             intercepted.append(True)
             route.abort('failed')
+        def lose_first_receipt(route):
+            receipt_intercepted.append(True)
+            route.abort('failed')
         page.route('**/play/action', lose_response, times=1)
+        page.route('**/play/receipt/**', lose_first_receipt, times=1)
         page.click('#say')
         page.fill('#modal textarea', '这句话只应提交一次。')
         page.click('#modal form button[type=submit]')
         expect(page.locator('#modal')).not_to_be_visible(timeout=20000)
         page.wait_for_function("() => document.querySelector('#bubbles').textContent.includes('这句话只应提交一次')", timeout=15000)
-        assert intercepted and counts() == before + 1
+        assert intercepted and receipt_intercepted and counts() == before + 1
         assert page.evaluate("sessionStorage.getItem('lh.pending')") is None
-        report['lost_response_recovers_without_duplicate'] = True
+        report['lost_action_and_first_receipt_recover_without_duplicate'] = True
         page.click('.residents button[data-target="rowan"]')
         deadline = time.monotonic() + 15
         while time.monotonic() < deadline:
