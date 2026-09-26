@@ -2,7 +2,11 @@
 
 A small persistent pixel world, for players, external Agents and observers.
 
-![Lantern Hollow](docs/preview.png)
+![Lantern Hollow](docs/frontend-polish/player-desktop.png)
+
+**0.6.0rc1 product-polish candidate:** scene-first play, a goal-focused journal,
+portrait-aware cameras, crisp labels and explicit Agent access.
+See [the illustrated change and verification record](docs/FRONTEND_PRODUCT_POLISH.md).
 
 ```sh
 python -m venv .venv

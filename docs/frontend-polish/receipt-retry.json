@@ -1,0 +1,17 @@
+{
+  "before": {
+    "status": "failed",
+    "case": "action_and_all_receipts_lost_then_user_retries",
+    "error": "Locator expected not to be visible\nActual value: visible \nCall log:\n  - Expect \"to_be_visible\" with timeout 15000ms\n  - waiting for locator(\"#modal\")\n    18 × locator resolved to <dialog open=\"\" id=\"modal\">…</dialog>\n       - unexpected value \"visible\"\n",
+    "post_count": 2,
+    "distinct_operations": 2,
+    "page_errors": []
+  },
+  "after": {
+    "status": "passed",
+    "case": "action_and_all_receipts_lost_then_user_retries",
+    "post_count": 1,
+    "distinct_operations": 1,
+    "page_errors": []
+  }
+}

@@ -1,0 +1,402 @@
+{
+  "status": "validated-product-polish-candidate",
+  "version": "0.6.0rc1",
+  "base_commit": "f90912e13938b13ee97006f6aececc667bf46fc4",
+  "core_commit": "7d3609853db34f3402754bd0860fee96115a9de1",
+  "core_worktree_clean": true,
+  "unit_tests": 86,
+  "product_flow": {
+    "status": "passed",
+    "browser": "chromium",
+    "checks": {
+      "agent_entry_no_implicit_key_or_role_creation": true,
+      "goal_first_with_separate_live_panel": true,
+      "mobile_hud_above_navigation": true,
+      "mobile_panels_keyboard_and_focus_return": true,
+      "aspect_correct_high_dpi_matrix": [
+        {
+          "width": 320,
+          "overflow": 0,
+          "aspectError": 5.341880341891425e-05,
+          "labelScale": 2
+        },
+        {
+          "width": 390,
+          "overflow": 0,
+          "aspectError": 0.0011055663745536126,
+          "labelScale": 2
+        },
+        {
+          "width": 768,
+          "overflow": 0,
+          "aspectError": 0.0004807692307693401,
+          "labelScale": 2
+        },
+        {
+          "width": 1024,
+          "overflow": 0,
+          "aspectError": 0.0009321036106750835,
+          "labelScale": 2
+        },
+        {
+          "width": 1440,
+          "overflow": 0,
+          "aspectError": 0.0005927291886194119,
+          "labelScale": 2
+        }
+      ],
+      "full_gameplay_and_native_result_dialog": true,
+      "authoritative_result_survives_refresh": true
+    },
+    "page_errors": [],
+    "version": "143.0.7499.4"
+  },
+  "browser_matrix": [
+    {
+      "browser": "chromium",
+      "status": "passed",
+      "checks": {
+        "adjacent_nameplates_nonoverlap": 2,
+        "authored_speech_safe_text": true,
+        "player_join_and_composer": true,
+        "player_refresh_and_no_old_bubbles": true,
+        "visible_quest_and_result": true,
+        "native_dialog_keyboard": true,
+        "responsive_and_language": true,
+        "css_zoom_reflow_125_150_200": true,
+        "axe_violations": {
+          "watch": 0,
+          "help": 0
+        },
+        "gallery_reduced_motion": true,
+        "independent_material_read": true,
+        "independent_protocol_delta_feed": true
+      },
+      "page_errors": [],
+      "version": "143.0.7499.4"
+    },
+    {
+      "browser": "edge",
+      "status": "passed",
+      "checks": {
+        "adjacent_nameplates_nonoverlap": 2,
+        "authored_speech_safe_text": true,
+        "player_join_and_composer": true,
+        "player_refresh_and_no_old_bubbles": true,
+        "visible_quest_and_result": true,
+        "native_dialog_keyboard": true,
+        "responsive_and_language": true,
+        "css_zoom_reflow_125_150_200": true,
+        "axe_violations": {
+          "watch": 0,
+          "help": 0
+        },
+        "gallery_reduced_motion": true,
+        "independent_material_read": true,
+        "independent_protocol_delta_feed": true
+      },
+      "page_errors": [],
+      "version": "153.0.4234.48"
+    },
+    {
+      "browser": "firefox",
+      "status": "passed",
+      "checks": {
+        "adjacent_nameplates_nonoverlap": 2,
+        "authored_speech_safe_text": true,
+        "player_join_and_composer": true,
+        "player_refresh_and_no_old_bubbles": true,
+        "visible_quest_and_result": true,
+        "native_dialog_keyboard": true,
+        "responsive_and_language": true,
+        "css_zoom_reflow_125_150_200": true,
+        "axe_violations": {
+          "watch": 0,
+          "help": 0
+        },
+        "gallery_reduced_motion": true,
+        "independent_material_read": true,
+        "independent_protocol_delta_feed": true
+      },
+      "page_errors": [],
+      "version": "144.0.2"
+    },
+    {
+      "browser": "webkit",
+      "status": "passed",
+      "checks": {
+        "adjacent_nameplates_nonoverlap": 2,
+        "authored_speech_safe_text": true,
+        "player_join_and_composer": true,
+        "player_refresh_and_no_old_bubbles": true,
+        "visible_quest_and_result": true,
+        "native_dialog_keyboard": true,
+        "responsive_and_language": true,
+        "css_zoom_reflow_125_150_200": true,
+        "axe_violations": {
+          "watch": 0,
+          "help": 0
+        },
+        "gallery_reduced_motion": true,
+        "independent_material_read": true,
+        "independent_protocol_delta_feed": true
+      },
+      "page_errors": [],
+      "version": "26.0"
+    }
+  ],
+  "visual_cases": 180,
+  "accessibility": {
+    "status": "passed",
+    "cases": {
+      "join_keyboard_only": true,
+      "dialog_focus_return": true,
+      "compose_keyboard_only": true,
+      "synthetic_ime_event_not_world_input": true,
+      "all_character_frame_contact_sheets": {
+        "traveler": 64,
+        "sage": 64,
+        "rose": 64,
+        "keeper": 64,
+        "smith": 64,
+        "gardener": 64
+      },
+      "asset_replacement_changes_pixels_not_facts": true
+    },
+    "violations": {
+      "watch": 0,
+      "entry": 0,
+      "player": 0,
+      "help": 0,
+      "composer": 0,
+      "gallery": 0,
+      "independent": 0
+    },
+    "incomplete": {
+      "watch": 1,
+      "entry": 1,
+      "player": 1,
+      "help": 0,
+      "composer": 1,
+      "gallery": 1,
+      "independent": 0
+    }
+  },
+  "faults": {
+    "status": "passed",
+    "cases": {
+      "html_initial_failure_recovers": true,
+      "invalid_public_scope_rejected_and_snapshot_reset": true,
+      "mismatched_delta_recovers": true,
+      "unknown_view_version_requires_reset": true,
+      "lost_response_single_action_receipt_and_reload": true,
+      "late_private_response_cannot_change_observer_mode": true,
+      "real_5s_30s_offline_and_expired_speech": true,
+      "same_fixture_server_restart_recovers": true,
+      "manifest404_declared_fallback": true,
+      "png404_declared_fallback": true,
+      "pngCorrupt_declared_fallback": true,
+      "unknownManifest_declared_fallback": true,
+      "unknown_world_contract_not_rendered": true,
+      "denied_optional_storage_does_not_break_public_client": true,
+      "independent_delta_feed_materials_reconnect_no_internal_import": true
+    },
+    "page_errors": []
+  },
+  "experience": {
+    "first_load_outage_user_retry": true,
+    "all_six_colocated_sprites_hit_correct_identity": 6,
+    "roster_double_click_survives_selection_update": true,
+    "desktop_bubbles_bounded_nonoverlap": 4,
+    "crowd_overflow_has_full_history_entry": true,
+    "entry_form_not_covered_by_speech": true,
+    "keyboard_focus_survives_live_roster_update": true,
+    "appended_history_preserves_reader_position": {
+      "before": 20,
+      "after": 20
+    },
+    "new_records_badge_returns_to_latest": true,
+    "typing_movement_letters_does_not_control_world": true,
+    "late_action_response_does_not_close_new_dialog": true,
+    "offline_world_change_and_reconnect": true,
+    "responsive_sizes_and_english": [
+      [
+        320,
+        640
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        768,
+        600
+      ],
+      [
+        1024,
+        768
+      ],
+      [
+        1920,
+        1080
+      ]
+    ],
+    "single_truncated_bubble_has_full_text_entry": true,
+    "invalid_asset_manifest_safe_fallback": true,
+    "independent_viewer_still_connected": true,
+    "sustained_frontend_exercise": {
+      "elapsed_seconds": 90.88751090000733,
+      "cycles": 39,
+      "roles": 7,
+      "simultaneous_clients": 2,
+      "timeline_rows": 124,
+      "page_errors": 0
+    },
+    "prepending_older_history_preserves_visible_anchor": true,
+    "changing_reduced_motion_freezes_gallery_pixels": true,
+    "overall_completed": true
+  },
+  "receipt_retry": {
+    "status": "passed",
+    "case": "action_and_all_receipts_lost_then_user_retries",
+    "post_count": 1,
+    "distinct_operations": 1,
+    "page_errors": []
+  },
+  "receipt_negative_control": {
+    "status": "failed",
+    "case": "action_and_all_receipts_lost_then_user_retries",
+    "error": "Locator expected not to be visible\nActual value: visible \nCall log:\n  - Expect \"to_be_visible\" with timeout 15000ms\n  - waiting for locator(\"#modal\")\n    18 × locator resolved to <dialog open=\"\" id=\"modal\">…</dialog>\n       - unexpected value \"visible\"\n",
+    "post_count": 2,
+    "distinct_operations": 2,
+    "page_errors": []
+  },
+  "short_dual_run": {
+    "mode": "dual",
+    "requested_seconds": 120,
+    "status": "passed",
+    "page_errors": [],
+    "model_calls": 0,
+    "scope": "Local browser client endurance on isolated fixtures; not cloud/server capacity or physical phones",
+    "browser": "143.0.7499.4",
+    "roles": 12,
+    "clients": 2,
+    "started_at": 1790393398.1349766,
+    "growth_checks": {},
+    "requests": {
+      "official": 90,
+      "independent": 78
+    },
+    "sampling_note": "Every 30 seconds records natural heap before diagnostic GC and retained heap afterwards; not an uninstrumented memory benchmark",
+    "actual_seconds": 120.35113210001145,
+    "cycles": 40,
+    "final_at": 1790393518.4882996,
+    "source_unchanged": true
+  },
+  "package": {
+    "status": "passed",
+    "version": "0.6.0rc1",
+    "web_files_exact": 22,
+    "wheel": "agent_world_lantern_hollow-0.6.0rc1-py3-none-any.whl",
+    "wheel_sha256": "c9fed670152dfc33b3e9ab5b3303b122575c74827913770933dd87faf478b136",
+    "imported_from_installed_target": true,
+    "source_cwd_excluded": true,
+    "join_and_first_objective": true,
+    "mobile_horizontal_overflow": false,
+    "page_errors": [],
+    "scope": "Fresh pip target and fresh server/database; shared existing Python dependency environment, NOT a fully clean dependency installation."
+  },
+  "runtime_hashes": {
+    "lantern_hollow\\legacy_history.py": "d1e582e345f2f5c841dd80a09db8c5c07f2b061542de4269c6777a00c41c95f6",
+    "lantern_hollow\\map.py": "1480f58bd26021e44b28267ffbafe3d1e2efd13e2c908bb7c15371910a896854",
+    "lantern_hollow\\onboarding.py": "19d9861ef8aa3f931678a043cc3012d0df3232398b9db81d561940cb96afe389",
+    "lantern_hollow\\server.py": "62370d6fe54140f20dbd5e025a081f2d0636ab30602e7b99e8c5740860e79d3a",
+    "lantern_hollow\\world.py": "94b23d082137549258ea5bcf2048c1b32312106f41d5e4182a322cdaf9f780b1",
+    "lantern_hollow\\__init__.py": "75a802c19f6dabf34a93a15c1430c5ebd765bf8aa44150a8967317199772eac6",
+    "lantern_hollow\\web\\app.js": "2b9656e8a2a5629e0d1cbb8c4bb67cfc3c77b992a2e2106ba70c7db3d9fae17c",
+    "lantern_hollow\\web\\art-gallery.css": "88cdf8127d9596a8f9a5c41a616108d1a18e1efba17dad85d1bab0765a742902",
+    "lantern_hollow\\web\\art-gallery.html": "78e7538ae41f076f9184914ef12f62551034353ac9a8610575311205007cdfed",
+    "lantern_hollow\\web\\art-gallery.js": "4918cd9f283582b38a02f6193c42dff685d240da6ff458cae337447eac13a890",
+    "lantern_hollow\\web\\assets.js": "218b7f3177f4b07e2152d5b521ef901dfc43eaec2761fa4fde0fa9ccd6b95f7d",
+    "lantern_hollow\\web\\browser-storage.js": "a960a30a4eccb5ba6831778fad79c9245cb24de764c4de2a5e63cc52c4d0ffac",
+    "lantern_hollow\\web\\camera.js": "f6ba7f7c0b8526c5cd1f0f4df31468b4d9d440927d782e218fd45face3352723",
+    "lantern_hollow\\web\\favicon.svg": "cc3e8afa1880cc3249ac7edabb8837f58d02ad015f5e9702e6efbccafd83d1c5",
+    "lantern_hollow\\web\\frontend-demo.html": "a8ec6532cef0f39b9a0d04c3c7497a844222573431a9688696003585c902526c",
+    "lantern_hollow\\web\\index.html": "36d3d3bdd6cfbbef058a0a6fe7ce996a7135cb2f64603b1dcb497ed5ab35158e",
+    "lantern_hollow\\web\\presentation.js": "698533b24e7ead792ff0f5bdc4af908da148834899f1c0d3be8ea7779874aa1c",
+    "lantern_hollow\\web\\product-shell.js": "ee3117270c1357029210283a6b54cdd88f61c8f8f280897e8998fbcb6de11bdd",
+    "lantern_hollow\\web\\product.css": "48e0cd79ab8f190b84033ea937b1842b00c74aaff197a2809c20f375b7b40e5c",
+    "lantern_hollow\\web\\render.js": "bffe11183401aa74750b82a4d698eabe5342e983d318aba33053613186d756fc",
+    "lantern_hollow\\web\\sample-assets.json": "46487faf520234bf35331aff250136f190485ec797f7174cbb85bff295cd3aff",
+    "lantern_hollow\\web\\sample-assets.zip": "a4aed2d6f95909bf5c492218fa807272d13408307f39fa5825b21c2b92142e6c",
+    "lantern_hollow\\web\\sample-atlas.png": "9169744fc3a7ce7715c6a87d9b827a2530ef69890d18e82ad4bd3fb424b425d1",
+    "lantern_hollow\\web\\sample-demo.png": "b8bc3c4bd9d450454465db3604ba5865cf05d3731cbcff75adf52151b32c5a83",
+    "lantern_hollow\\web\\sample-demo.webm": "320c1d96d5ca31ad13a69cd9466cda1198a1c983e0e7eabe34be8690b44e1a1d",
+    "lantern_hollow\\web\\style.css": "f031e434ace3861f26fb581354448ff774e90e435a9adb608190247777813af5",
+    "lantern_hollow\\web\\ui-layout.js": "ab7ea4485c373c6bfdf587aa1e5780eb3dacb1549110814b6108d7c985f5115b",
+    "lantern_hollow\\web\\view-contract.js": "34e7b9988284b99e016f2aa6a5acf92051f033b4b08e5f0098d1a597815d8599"
+  },
+  "backend_and_public_client_unchanged": true,
+  "artwork": "Existing pixel atlas retained. No regenerated art claim.",
+  "limits": [
+    "No new full 30/30/60-minute endurance gate",
+    "Not physical Android/iPhone testing",
+    "Not native software-keyboard or screen-reader certification",
+    "Installed package uses shared existing dependencies",
+    "Not an autonomous-model or server-capacity benchmark"
+  ],
+  "legacy_browser_gates": {
+    "check_observation": {
+      "gate": "check_observation",
+      "exit_code": 0,
+      "elapsed_seconds": 14.8,
+      "log": "check_observation-polish-02.log"
+    },
+    "check_onboarding": {
+      "gate": "check_onboarding",
+      "exit_code": 0,
+      "elapsed_seconds": 4.37,
+      "log": "check_onboarding-polish-02.log"
+    },
+    "check_semantic_presentation": {
+      "gate": "check_semantic_presentation",
+      "exit_code": 0,
+      "elapsed_seconds": 18.89,
+      "log": "check_semantic_presentation-polish.log"
+    },
+    "browser_check": {
+      "gate": "browser_check",
+      "exit_code": 0,
+      "elapsed_seconds": 42.11,
+      "log": "browser_check-polish-02.log"
+    },
+    "check_frontend_experience": {
+      "gate": "check_frontend_experience",
+      "exit_code": 0,
+      "elapsed_seconds": 126.33,
+      "log": "experience-03.log"
+    },
+    "check_sample_assets": {
+      "gate": "check_sample_assets",
+      "exit_code": 0,
+      "elapsed_seconds": 33.56,
+      "log": "check_sample_assets-polish.log"
+    },
+    "check_visual_matrix": {
+      "gate": "check_visual_matrix",
+      "exit_code": 0,
+      "elapsed_seconds": 84.5,
+      "log": "check_visual_matrix-polish-02.log"
+    }
+  },
+  "camera_gate": "passed after mobile navigation was updated",
+  "edge_gate": "passed",
+  "iteration_notes": [
+    "Mobile header English overflow corrected",
+    "Mobile dock/HUD overlap corrected",
+    "Paper resident-caption contrast corrected (4.41:1 was insufficient)",
+    "Old mobile test entrypoints migrated to visible Agent/dock controls",
+    "Visual test bounds and hit geometry now use actual responsive viewport",
+    "Single-speaker clipping probe explicitly follows its speaker"
+  ]
+}
