@@ -122,7 +122,7 @@ def main():
         page.wait_for_timeout(900)
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth+1')
         page.screenshot(path=str(out/'mobile.png'),full_page=True)
-        page.click('#journal-toggle')
+        page.click('#dock-journey')
         page.screenshot(path=str(out/'mobile-journal.png'),full_page=True)
         report['mobile_layout']=True
         page.set_viewport_size({'width':1440,'height':980})

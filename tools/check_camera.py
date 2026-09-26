@@ -109,10 +109,10 @@ def main():
         mobile.screenshot(path=str(out/'mobile.png'),full_page=True)
         report['mobile_layout_pinch_and_return']=True
         assert 'role=' not in mobile.url
-        mobile.click('#follow-agent');mobile.fill('#watch-role-id',original);mobile.click('#watch-role-confirm')
+        mobile.click('#agent-entry');mobile.click('#access-watch');mobile.fill('#watch-role-id',original);mobile.click('#watch-role-confirm')
         expect(mobile.locator('#camera-status')).to_contain_text('Camera player')
         mobile.reload();expect(mobile.locator('#camera-status')).to_contain_text('Camera player')
-        mobile.click('#follow-agent');mobile.click('#watch-role-forget')
+        mobile.click('#agent-entry');mobile.click('#access-watch');mobile.click('#watch-role-forget')
         mobile.reload();expect(mobile.locator('#camera-status')).to_have_text('\u81ea\u7531\u89c2\u5bdf')
         assert mobile.evaluate('localStorage.getItem("lh.public-focus")') is None
         report['linked_role_switch_and_forget_survive_refresh']=True

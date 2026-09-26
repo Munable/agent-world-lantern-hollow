@@ -29,9 +29,9 @@ def main():
        if camera=='max':
         for _ in range(7):page.click('#zoom-in')
        page.wait_for_timeout(80);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
-       boxes=json.loads(page.locator('#world').get_attribute('data-nameplates') or '[]')
+       boxes=json.loads(page.locator('#world').get_attribute('data-nameplates') or '[]');viewport=page.locator('#world').evaluate('(c)=>({width:c.width,height:c.height})')
        for i,a in enumerate(boxes):
-        assert 0<=a['x'] and a['x']+a['w']<=640 and 0<=a['y'] and a['y']+a['h']<=416
+        assert 0<=a['x'] and a['x']+a['w']<=viewport['width']+.001 and 0<=a['y'] and a['y']+a['h']<=viewport['height']+.001
         for b in boxes[i+1:]:assert a['x']+a['w']<=b['x'] or b['x']+b['w']<=a['x'] or a['y']+a['h']<=b['y'] or b['y']+b['h']<=a['y'],(n,mode,width,camera,boxes)
        results.append({'roles':n,'distribution':mode,'width':width,'camera':camera,'labels':len(boxes)})
        if n in (2,12) and mode=='adjacent' and width in (390,1280) and camera in ('overview','follow'):page.screenshot(path=str(out/f'{n}-{mode}-{width}-{camera}.png'),full_page=True)

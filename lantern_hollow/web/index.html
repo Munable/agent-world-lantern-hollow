@@ -4,13 +4,15 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282c"><meta name="description" content="灯溪镇。一盏灯，一段归途。An independent persistent pixel world.">
   <title>灯溪镇 · Lantern Hollow</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css?v=0.5.0">
+  <link rel="stylesheet" href="/static/style.css?v=0.6.0rc1">
+  <link rel="stylesheet" href="/static/product.css?v=1">
 </head>
 <body>
+<a class="skip-link" href="#world">进入游戏场景 / Skip to the scene</a>
 <header class="masthead">
  <a class="brand" href="/" aria-label="Lantern Hollow"><span class="lantern-mark" aria-hidden="true">✦</span><span><strong data-i18n="title">灯溪镇</strong><small>LANTERN HOLLOW</small></span></a>
  <p class="chapter" data-i18n="chapter">序章 · 归途有光</p>
- <nav aria-label="Main"><button id="join-mode" disabled class="language">加入小镇</button><button id="watch-mode" class="language" hidden>只读观战</button><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
+ <nav aria-label="Main"><button id="agent-entry" class="agent-entry" type="button">Agent 接入 <span aria-hidden="true">↗</span></button><button id="join-mode" disabled class="language">加入小镇</button><button id="watch-mode" class="language" hidden>只读观战</button><button id="audio" class="icon-button" aria-pressed="false" title="Sound">♫ <span data-i18n="sound">声音</span></button><button id="help" class="icon-button" data-i18n="help">怎么玩</button><button id="language" class="language" title="Switch language">EN</button></nav>
 </header>
 <main>
  <div class="world-layout">
@@ -24,6 +26,10 @@
     <button id="zoom-in" disabled type="button" aria-label="Zoom in">+</button>
     <button id="overview" disabled type="button" aria-label="Whole map">全图</button>
    </div>
+   <section id="scene-objective" class="scene-objective" aria-label="当前目标" hidden>
+    <span id="goal-step" class="goal-step" aria-hidden="true">01</span><div><small id="goal-caption">今晚的小事</small><strong id="goal-title"></strong></div>
+    <button id="goal-action" type="button"></button>
+   </section>
    <div class="canvas-wrap" id="canvas-wrap">
     <canvas id="world" width="640" height="416" tabindex="0" aria-label="Village map. Click a location to walk. WASD or arrow keys to move. E to interact. Escape to stop."></canvas>
     <div id="bubbles" class="bubbles" aria-live="polite"></div>
@@ -31,21 +37,33 @@
     <section id="connection-problem" class="connection-problem" role="alert" hidden><h2>连接暂时中断</h2><p id="connection-problem-text"></p><button id="retry-world" class="gold" type="button">重新连接</button></section>
     <div id="hover-label" class="hover-label" hidden></div>
     <div class="welcome" id="welcome" hidden>
-     <div class="welcome-seal">✧</div><p class="eyebrow">A WORLD THAT REMEMBERS</p>
+     <button id="welcome-close" type="button" class="welcome-close" aria-label="取消进入小镇">×</button><div class="welcome-seal" aria-hidden="true">✧</div><p class="eyebrow">A WORLD THAT REMEMBERS</p>
      <h1 data-i18n="welcomeTitle">黄昏还在，<br>等一盏归航的灯。</h1>
      <p data-i18n="welcomeBody">沿着溪流散步，和居民聊聊。你留下的光，会在下次回来时继续亮着。</p>
-     <form id="join-form"><div class="appearance-picker" role="group" aria-label="Choose a traveler"><button type="button" data-appearance="traveler" aria-pressed="true" aria-label="Blue traveler"><canvas data-portrait="traveler"></canvas></button><button type="button" data-appearance="sage" aria-pressed="false" aria-label="Violet traveler"><canvas data-portrait="sage"></canvas></button><button type="button" data-appearance="rose" aria-pressed="false" aria-label="Rose traveler"><canvas data-portrait="rose"></canvas></button></div><label class="sr-only" for="name" data-i18n="yourName">旅人的名字</label><input id="name" name="name" maxlength="24" autocomplete="nickname" required placeholder="旅人的名字" value=""><button class="gold" id="join" type="submit"><span data-i18n="enter">进入小镇</span><span>↗</span></button></form>
-     <small data-i18n="welcomeFoot">无需模型账号 · 浏览器存档 · 原创像素场景</small><p id="join-error" class="error" role="alert" hidden></p>
+     <form id="join-form"><div class="appearance-picker" role="group" aria-label="Choose a traveler"><button type="button" data-appearance="traveler" aria-pressed="true" aria-label="Blue traveler"><canvas data-portrait="traveler"></canvas></button><button type="button" data-appearance="sage" aria-pressed="false" aria-label="Violet traveler"><canvas data-portrait="sage"></canvas></button><button type="button" data-appearance="rose" aria-pressed="false" aria-label="Rose traveler"><canvas data-portrait="rose"></canvas></button></div><label class="name-label" for="name" data-i18n="yourName">旅人的名字</label><input id="name" name="name" maxlength="24" autocomplete="nickname" required placeholder="旅人的名字" value=""><button class="gold" id="join" type="submit"><span data-i18n="enter">进入小镇</span><span>↗</span></button></form>
+     <p class="entry-boundary" id="entry-boundary">这里会新建一个由你直接操作的旅人。已有 Agent 角色，请用顶部的 Agent 接入。</p><small data-i18n="welcomeFoot">无需模型账号 · 浏览器存档 · 原创像素场景</small><p id="join-error" class="error" role="alert" hidden></p>
     </div>
-    <div class="completion" id="completion" hidden role="dialog" aria-labelledby="complete-title"><div class="completion-stars">✦ &nbsp; ✧ &nbsp; ✦</div><p class="eyebrow" data-i18n="chapterComplete">序章完成</p><h2 id="complete-title" data-i18n="completeTitle">归途有光</h2><p data-i18n="completeBody">一盏灯，替这座小镇记住了你的到来。沿着溪岸再走走，或给下一位旅人留句话。</p><button id="complete-continue" class="gold" data-i18n="leaveTrace">去留下足迹 ↗</button><button id="complete-close" class="text-button" data-i18n="keepWalking">再散散步</button></div>
+    <dialog class="completion" id="completion" hidden role="dialog" aria-labelledby="complete-title"><div class="completion-stars">✦ &nbsp; ✧ &nbsp; ✦</div><p class="eyebrow" data-i18n="chapterComplete">序章完成</p><h2 id="complete-title" data-i18n="completeTitle">归途有光</h2><p data-i18n="completeBody">一盏灯，替这座小镇记住了你的到来。沿着溪岸再走走，或给下一位旅人留句话。</p><button id="complete-continue" class="gold" data-i18n="leaveTrace">去留下足迹 ↗</button><button id="complete-close" class="text-button" data-i18n="keepWalking">再散散步</button></dialog>
    </div>
-   <div class="world-bottom"><div class="traveler-chip"><canvas id="portrait" width="48" height="48"></canvas><span><strong id="traveler-name" data-i18n="visitor">远道而来的旅人</strong><small id="activity-label" data-i18n="ready">世界正在等你</small></span></div><div class="toolbar"><button id="say" disabled title="Public speech"><span>“ ”</span><span data-i18n="say">说句话</span></button><button id="intent" disabled title="Public intention, not private reasoning"><span>◌</span><span data-i18n="intent">公开打算</span></button><button id="stop" disabled title="Escape"><span>□</span><span data-i18n="stop">停下</span><kbd>ESC</kbd></button></div></div>
+   <div id="action-feedback" class="action-feedback" role="status" hidden></div>
+   <div class="world-bottom"><div class="traveler-chip"><canvas id="portrait" width="48" height="48"></canvas><span><strong id="traveler-name" data-i18n="visitor">远道而来的旅人</strong><small id="activity-label" data-i18n="ready">世界正在等你</small><span id="activity-meter" class="activity-meter" role="progressbar" aria-label="当前活动进度" hidden><i id="activity-progress"></i></span></span></div><div class="toolbar"><button id="say" disabled title="Public speech"><span>“ ”</span><span data-i18n="say">说句话</span></button><button id="intent" disabled title="Public intention, not private reasoning"><span>◌</span><span data-i18n="intent">公开打算</span></button><button id="stop" disabled title="Escape"><span>□</span><span data-i18n="stop">停下</span><kbd>ESC</kbd></button></div></div>
   </section>
-  <aside class="journal" id="journal">
-   <section class="live-panel" aria-label="Live world observation">
+  <aside class="journal" id="journal" tabindex="-1" aria-label="旅人手记与世界现场">
+   <nav class="journal-tabs" aria-label="手记面板">
+    <button id="tab-journey" data-panel-target="journey" aria-pressed="false" type="button">旅人手记</button>
+    <button id="tab-live" data-panel-target="live" aria-pressed="true" type="button">世界现场</button>
+    <button id="panel-close" aria-label="回到场景" type="button">×</button>
+   </nav>
+   <section class="live-panel" id="panel-live" aria-label="Live world observation">
+    <section id="arrival-card" class="arrival-card">
+     <p class="eyebrow">A WORLD THAT REMEMBERS</p><h2 id="arrival-title">小镇还亮着灯。</h2>
+     <p id="arrival-copy">让你的 Agent 来走走，或亲自成为一位旅人。世界会记住已经发生的事。</p>
+     <button id="arrival-agent" class="gold" type="button">带上我的 Agent <span aria-hidden="true">↗</span></button>
+     <button id="arrival-join" class="text-button" type="button">我先亲自走走</button>
+    </section>
     <div class="section-title"><h2 id="live-title">世界现场</h2><span id="traveler-count">0</span></div>
     <p class="small" id="watch-health" aria-live="off">正在读取服务器…</p>
-    <p class="small" id="presence-boundary">角色存在不代表模型持续在线</p>
+    <details class="world-disclosure"><summary id="world-disclosure-label">关于角色与公开信息</summary><p class="small" id="presence-boundary">角色存在不代表模型持续在线</p></details>
     <p id="focus-status" class="small"></p><button id="focus-clear" class="text-button" hidden>取消关注</button>
     <div id="travelers" class="travelers"></div>
     <div class="section-title"><h3 id="timeline-title">事件与对话</h3><select id="event-filter" aria-label="Filter events"><option value="all">全部</option><option value="speech">对话</option><option value="action">动作</option></select></div>
@@ -54,7 +72,7 @@
     <button id="load-history" class="text-button" hidden>读取更早记录</button>
     <section class="public-notes-panel"><div class="section-title"><h3 id="public-notes-title">旅人留下的话</h3></div><div id="public-notes" class="notes"></div></section>
    </section>
-   <div class="player-journal">
+   <div class="player-journal" id="panel-journey" hidden>
    <div class="journal-head"><span class="eyebrow">TRAVELER'S JOURNAL</span><span class="journal-leaf">❧</span></div>
    <h2 data-i18n="journalTitle">今晚的小事</h2><p class="journal-intro" data-i18n="journalIntro">让一束光，重新照向溪流。</p>
    <ol class="quest-list">
@@ -73,9 +91,14 @@
    </div>
   </aside>
  </div>
- <footer><p><span class="footer-star">✧</span> <span data-i18n="footer">世界留住足迹，旅人带走故事。</span></p><div><span id="save-label" data-i18n="serverTruth">服务器保存 · 不止于此刻</span><span class="sep">/</span><button id="resume-existing" data-i18n="resumeAccess">角色续接</button><button id="journal-toggle" data-i18n="showJournal">旅人手记</button></div></footer>
+ <footer><p><span class="footer-star">✧</span> <span data-i18n="footer">世界留住足迹，旅人带走故事。</span></p><div><details id="art-tools" class="art-tools"><summary id="art-tools-label">素材</summary></details><span id="save-label" data-i18n="serverTruth">服务器保存 · 不止于此刻</span><span class="sep">/</span><button id="resume-existing" data-i18n="resumeAccess">角色续接</button><button id="journal-toggle" data-i18n="showJournal">旅人手记</button></div></footer>
+ <nav class="mobile-dock" aria-label="游戏面板">
+  <button id="dock-scene" data-panel-target="scene" type="button" aria-pressed="true"><span aria-hidden="true">⌖</span><span id="dock-scene-label">场景</span></button>
+  <button id="dock-journey" data-panel-target="journey" type="button" aria-pressed="false"><span aria-hidden="true">▤</span><span id="dock-journey-label">手记</span></button>
+  <button id="dock-live" data-panel-target="live" type="button" aria-pressed="false"><span aria-hidden="true">◌</span><span id="dock-live-label">现场</span></button>
+ </nav>
  <div id="toast" class="toast" role="status" hidden></div>
 </main>
-<dialog id="modal"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
-<script type="module" src="/static/app.js?v=0.5.0"></script>
+<dialog id="modal" aria-labelledby="modal-title"><button id="modal-close" class="modal-close" aria-label="Close">×</button><p class="eyebrow">LANTERN HOLLOW</p><h2 id="modal-title"></h2><div id="modal-body"></div></dialog>
+<script type="module" src="/static/app.js?v=0.6.0rc1"></script>
 </body></html>

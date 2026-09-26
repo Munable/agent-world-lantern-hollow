@@ -7,6 +7,7 @@ class FrontendGateTests(unittest.TestCase):
  def test_nameplates(self):self.check('nameplate.test.mjs')
  def test_view_and_storage(self):self.check('frontend_contract.test.mjs')
  def test_independent_protocol(self):self.check('public_protocol.test.mjs')
+ def test_product_shell(self):self.check('product_shell.test.mjs')
 
  def test_two_static_fixtures_are_distinct_origins(self):
   import tempfile,httpx

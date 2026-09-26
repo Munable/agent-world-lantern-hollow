@@ -1,0 +1,1267 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 1,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "max",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 2,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "max",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "follow",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "follow",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "follow",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "max",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "follow",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "max",
+      "labels": 3
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "follow",
+      "labels": 5
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 6
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 6
+    },
+    {
+      "roles": 6,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 320,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 320,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 320,
+      "camera": "max",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 390,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 390,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 390,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 768,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 768,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 1
+    },
+    {
+      "roles": 12,
+      "distribution": "same",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "follow",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 320,
+      "camera": "max",
+      "labels": 4
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "overview",
+      "labels": 4
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "follow",
+      "labels": 4
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 390,
+      "camera": "max",
+      "labels": 4
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "overview",
+      "labels": 5
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "follow",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 768,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 6
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1280,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 6
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "adjacent",
+      "width": 1920,
+      "camera": "max",
+      "labels": 0
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "follow",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 320,
+      "camera": "max",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "overview",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "follow",
+      "labels": 2
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 390,
+      "camera": "max",
+      "labels": 3
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "overview",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "follow",
+      "labels": 5
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 768,
+      "camera": "max",
+      "labels": 2
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "overview",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "follow",
+      "labels": 5
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1280,
+      "camera": "max",
+      "labels": 2
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "overview",
+      "labels": 7
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "follow",
+      "labels": 6
+    },
+    {
+      "roles": 12,
+      "distribution": "spread",
+      "width": 1920,
+      "camera": "max",
+      "labels": 2
+    }
+  ],
+  "count": 180,
+  "scope": "Real fixture positions, browser layouts; hidden names remain accessible in roster"
+}

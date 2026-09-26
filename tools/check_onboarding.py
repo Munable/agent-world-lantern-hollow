@@ -91,7 +91,7 @@ def main():
         visitor.on('request',lambda r:requests.append((r.url,r.post_data or '')))
         visitor.goto(server.url+'/watch',wait_until='domcontentloaded')
         assert visitor.evaluate('document.documentElement.scrollWidth <= innerWidth')
-        visitor.click('#resume-existing')
+        visitor.click('#agent-entry');visitor.click('#access-resume')
         visitor.get_by_label('Saved Agent identity token').fill(invitation['identity_token'])
         visitor.click('#agent-resume-build')
         expect(visitor.get_by_label('Private Agent resume')).to_be_visible()
@@ -108,7 +108,7 @@ def main():
         # Hold an actual helper request, close it, then open an unrelated dialog.
         pending=[]
         visitor.route('**/play/agent/resume',lambda route:pending.append(route))
-        visitor.click('#resume-existing')
+        visitor.click('#agent-entry');visitor.click('#access-resume')
         visitor.get_by_label('Saved Agent identity token').fill(invitation['identity_token'])
         with visitor.expect_request(lambda r:r.url.endswith('/play/agent/resume')):
             visitor.click('#agent-resume-build')

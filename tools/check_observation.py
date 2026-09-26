@@ -113,6 +113,7 @@ def main():
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(500)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
         page.screenshot(path=str(output/'observer-mobile.png'),full_page=True)
+        page.click('#dock-live')
         expect(page.locator('.live-panel')).to_be_visible()
         report['mobile_observer_layout']=True
         # Same page can deliberately choose to become a player; mere observation never does that.
@@ -122,7 +123,7 @@ def main():
         expect(page.locator('#say')).to_be_enabled()
         expect(page.locator('#timeline')).to_contain_text('Beta, do you see the light?')
         reply_button=page.locator('#timeline li').filter(has_text='Yes Alpha, I am beside the path.').locator('button.reply')
-        reply_button.click();page.fill('#modal textarea','I can see both travelers from the browser.')
+        page.click('#tab-live');reply_button.click();page.fill('#modal textarea','I can see both travelers from the browser.')
         page.click('#modal form button[type=submit]')
         expect(page.locator('#timeline')).to_contain_text('I can see both travelers from the browser.',timeout=15000)
         report['human_player_can_reply_on_same_rules']=True

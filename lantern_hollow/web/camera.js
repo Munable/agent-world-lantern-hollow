@@ -1,24 +1,31 @@
 // Local presentation only. Coordinates here never change world state.
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 export class SceneCamera {
-  constructor(width,height) {this.width=width;this.height=height;this.zoom=1;this.x=width/2;this.y=height/2;this.followId=null;}
-  constrain() {
-    const hx=this.width/(2*this.zoom),hy=this.height/(2*this.zoom);
-    this.x=clamp(this.x,hx,this.width-hx);this.y=clamp(this.y,hy,this.height-hy);
+  constructor(width,height) {this.width=width;this.height=height;this.viewportWidth=width;this.viewportHeight=height;this.zoom=1;this.x=width/2;this.y=height/2;this.followId=null;}
+  get overviewZoom(){return Math.min(1,this.viewportWidth/this.width,this.viewportHeight/this.height);}
+  setViewport(width,height){
+    if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return;
+    const overview=!this.followId && Math.abs(this.zoom-this.overviewZoom)<.001;
+    this.viewportWidth=width;this.viewportHeight=height;
+    if(overview)this.overview();else this.constrain();
   }
-  get tx(){return this.width/2-this.x*this.zoom;}
-  get ty(){return this.height/2-this.y*this.zoom;}
+  constrain() {
+    const hx=this.viewportWidth/(2*this.zoom),hy=this.viewportHeight/(2*this.zoom);
+    this.x=hx>=this.width/2?this.width/2:clamp(this.x,hx,this.width-hx);this.y=hy>=this.height/2?this.height/2:clamp(this.y,hy,this.height-hy);
+  }
+  get tx(){return this.viewportWidth/2-this.x*this.zoom;}
+  get ty(){return this.viewportHeight/2-this.y*this.zoom;}
   project(x,y){return {x:x*this.zoom+this.tx,y:y*this.zoom+this.ty};}
   unproject(x,y){return {x:(x-this.tx)/this.zoom,y:(y-this.ty)/this.zoom};}
-  follow(id){this.followId=id||null;if(id&&this.zoom===1)this.zoom=1.8;this.constrain();}
+  follow(id){this.followId=id||null;if(id&&this.zoom<=this.overviewZoom+.001)this.zoom=1.8;this.constrain();}
   track(x,y){if(!this.followId)return;this.x=x;this.y=y;this.constrain();}
   pan(dx,dy){this.followId=null;this.x-=dx/this.zoom;this.y-=dy/this.zoom;this.constrain();}
-  scale(factor,sx=this.width/2,sy=this.height/2){
+  scale(factor,sx=this.viewportWidth/2,sy=this.viewportHeight/2){
     if(!Number.isFinite(factor)||factor<=0)return;
-    const anchor=this.unproject(sx,sy);this.followId=null;this.zoom=clamp(this.zoom*factor,1,4);
-    this.x=anchor.x-(sx-this.width/2)/this.zoom;this.y=anchor.y-(sy-this.height/2)/this.zoom;this.constrain();
+    const anchor=this.unproject(sx,sy);this.followId=null;this.zoom=clamp(this.zoom*factor,this.overviewZoom,4);
+    this.x=anchor.x-(sx-this.viewportWidth/2)/this.zoom;this.y=anchor.y-(sy-this.viewportHeight/2)/this.zoom;this.constrain();
   }
-  overview(){this.followId=null;this.zoom=1;this.x=this.width/2;this.y=this.height/2;}
+  overview(){this.followId=null;this.zoom=this.overviewZoom;this.x=this.width/2;this.y=this.height/2;}
 }
 // Pointer gestures are local. Dragging/pinching must never become a game click.
 export function bindCameraInput(canvas,camera,onChange=()=>{}) {

@@ -42,10 +42,11 @@ def main():
             page.goto(server.url+'/watch?role='+actors[0].role);expect(page.locator('#travelers [data-role]')).to_have_count(6)
             expect(page.locator('#world')).to_have_attribute('data-assets','ready');shot(page,'02-crowd-idle')
             snapshot=actors[0].http.get('/watch/session').json()['view']['snapshot'];world_map=actors[0].http.get('/play/map').json()
+            page.wait_for_timeout(700)  # Allow the local follow-camera easing to settle before hit geometry.
             positions=page.evaluate("""async ({entities,map,role})=>{
              const {travelerLayout}=await import('/static/ui-layout.js');const {SceneCamera}=await import('/static/camera.js');
-             const camera=new SceneCamera(map.width*16,map.height*16);camera.follow(role);camera.track(18*16+8,21*16+2);
              const canvas=document.querySelector('#world'),r=canvas.getBoundingClientRect();
+             const camera=new SceneCamera(map.width*16,map.height*16);camera.setViewport(canvas.width,canvas.height);camera.follow(role);camera.track(18*16+8,21*16+2);
              return travelerLayout(Object.values(entities),a=>({x:a.position[0],y:a.position[1]}),map.width).map(p=>{const q=camera.project((p.x+.5)*16,(p.y+.1)*16);return {role:p.actor.role_id,name:p.actor.name,x:r.x+q.x*r.width/canvas.width,y:r.y+q.y*r.height/canvas.height};});
             }""",{'entities':snapshot['entities'],'map':world_map,'role':actors[0].role})
             for target in positions:
@@ -58,7 +59,7 @@ def main():
             burst('desktop-');page.wait_for_timeout(1900);count=bubbles(page);assert count>0;shot(page,'03-crowd-speech');record('desktop_bubbles_bounded_nonoverlap',count)
             page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100);assert bubbles(page)<=2;expect(page.locator('#speech-overflow')).to_be_visible();shot(page,'04-mobile-speech')
             page.click('#speech-overflow');expect(page.locator('#event-filter')).to_have_value('speech');record('crowd_overflow_has_full_history_entry')
-            page.click('#join-mode');expect(page.locator('#name')).to_be_visible();expect(page.locator('#bubbles .bubble:visible')).to_have_count(0);shot(page,'05-entry_form_not_obscured');page.click('#join-mode');record('entry_form_not_covered_by_speech')
+            page.click('#dock-scene');page.click('#join-mode');expect(page.locator('#name')).to_be_visible();expect(page.locator('#bubbles .bubble:visible')).to_have_count(0);shot(page,'05-entry_form_not_obscured');page.click('#join-mode');record('entry_form_not_covered_by_speech')
             page.set_viewport_size({'width':1280,'height':850});page.select_option('#event-filter','all')
             row=page.locator('#travelers [data-role]').nth(2);row.focus();active=row.get_attribute('data-role');actors[0].act('town.say',{'text':'Focus must survive a different actor update'});page.wait_for_timeout(1700)
             assert page.evaluate('document.activeElement.dataset.role')==active;record('keyboard_focus_survives_live_roster_update')
@@ -94,6 +95,7 @@ def main():
             page.set_viewport_size({'width':390,'height':844});page.click('#language');page.wait_for_timeout(150);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');shot(page,'09-mobile-english');page.click('#language')
             record('responsive_sizes_and_english',widths)
             # A single long utterance offers access to its full text, not only crowd overflow.
+            page.click('#dock-live');page.locator('#travelers [data-role="'+actors[2].role+'"]').click();page.click('#dock-scene')
             page.wait_for_timeout(8500);actors[2].act('town.say',{'text':'Single long utterance '+('read the complete text. '*7)[:137]})
             page.wait_for_timeout(1800);expect(page.locator('#speech-overflow')).to_be_visible();page.click('#speech-overflow');expect(page.locator('#timeline')).to_contain_text('Single long utterance');record('single_truncated_bubble_has_full_text_entry')
             # Broken decoration is explicit without abandoning the world connection.
@@ -115,7 +117,9 @@ def main():
                 cycles+=1
             record('sustained_frontend_exercise',{'elapsed_seconds':monotonic()-soak_start,'cycles':cycles,'roles':7,'simultaneous_clients':2,'timeline_rows':page.locator('#timeline li').count(),'page_errors':len(report['page_errors'])})
             if args.soak_seconds>=90:
-                page.reload();expect(page.locator('#load-history')).to_be_visible();page.locator('#timeline').evaluate('(el)=>el.scrollTop=20')
+                page.reload();
+                if page.locator('#dock-live').is_visible():page.click('#dock-live')
+                expect(page.locator('#load-history')).to_be_visible();page.locator('#timeline').evaluate('(el)=>el.scrollTop=20')
                 old=page.locator('#timeline').evaluate('(el)=>{const t=el.getBoundingClientRect().top,c=[...el.children].find(c=>c.getBoundingClientRect().bottom>t);return {id:c.dataset.eventId,offset:c.getBoundingClientRect().top-t};}')
                 page.click('#load-history');page.wait_for_timeout(500)
                 new=page.locator('#timeline').evaluate('(el,id)=>{const c=[...el.children].find(c=>c.dataset.eventId===id);return c.getBoundingClientRect().top-el.getBoundingClientRect().top;}',old['id'])
